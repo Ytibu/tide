@@ -1,0 +1,8 @@
+
+.vscode/
+cmake/
+build/
+bin/
+lib/
+CMakeFiles/
+log/
