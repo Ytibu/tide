@@ -26,7 +26,7 @@ int main() {
         2, // fiber id or whatever the 6th param is
         time(0)
     ));
-    event->getContent();
+
 
     logger->log(tide::LogLevel::DEBUG, event);
 

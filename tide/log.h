@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 #include "singleton.h"
+#include "utils.h"
 
 #define LOG_LEVEL(logger, level) \
     if (logger->getLevel() <= level) \
@@ -36,6 +37,8 @@
 #define LOG_FMT_WARN(logger, fmt, ...)  LOG_FMT_LEVEL(logger, tide::LogLevel::WARN, fmt, __VA_ARGS__)
 #define LOG_FMT_ERROR(logger, fmt, ...) LOG_FMT_LEVEL(logger, tide::LogLevel::ERROR, fmt, __VA_ARGS__)
 #define LOG_FMT_FATAL(logger, fmt, ...) LOG_FMT_LEVEL(logger, tide::LogLevel::FATAL, fmt, __VA_ARGS__)
+
+#define LOG_ROOT() tide::LoggerMgr::GetInstance()->getRoot()
 
 namespace tide
 {
@@ -235,6 +238,7 @@ namespace tide
             Logger::ptr getLogger(const std::string& name);
 
             void init();
+            Logger::ptr getRoot() const { return m_root; }
 
         private:
             std::map<std::string, Logger::ptr> m_loggers;
