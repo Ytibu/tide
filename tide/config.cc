@@ -3,13 +3,13 @@
 namespace tide {
 
     // 保存所有已注册配置项的静态映射表。
-    Config::ConfigVarMap Config::s_datas;
+    //Config::ConfigVarMap Config::GetDatas();
 
     // 根据配置名称查找并返回对应的配置变量基类指针。
     ConfigVarBase::ptr Config::LookupBase(const std::string& name)
     {
-        auto it = s_datas.find(name);
-        return it == s_datas.end() ? nullptr : it->second;
+        auto it = GetDatas().find(name);
+        return it == GetDatas().end() ? nullptr : it->second;
     }
 
     // 递归遍历 YAML 节点，校验配置名称，并将所有成员收集到输出列表中。
@@ -17,7 +17,7 @@ namespace tide {
                                     std::list<std::pair<std::string, const YAML::Node>>& output) 
     {
         if (prefix.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") != std::string::npos) {
-            LOG_ERROR(LOG_ROOT()) << "Config invalid name: " << prefix << " - " << node;
+            TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "Config invalid name: " << prefix << " - " << node;
             return;
         }
         output.push_back(std::make_pair(prefix, node));

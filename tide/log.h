@@ -1,5 +1,5 @@
-#ifndef __LOG_H__
-#define __LOG_H__
+#ifndef __TIDE_LOG_H__
+#define __TIDE_LOG_H__
 
 #include <list>
 #include <vector>
@@ -7,7 +7,6 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-
 #include <map>
 
 #include <stdint.h>
@@ -15,30 +14,31 @@
 #include "singleton.h"
 #include "utils.h"
 
-#define LOG_LEVEL(logger, level) \
+#define TIDE_LOG_LEVEL(logger, level) \
     if (logger->getLevel() <= level) \
         tide::LogEventWrap(tide::LogEvent::ptr(new tide::LogEvent(logger, level, \
             __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0)))).getSS()
 
-#define LOG_DEBUG(logger) LOG_LEVEL(logger, tide::LogLevel::DEBUG)
-#define LOG_INFO(logger)  LOG_LEVEL(logger, tide::LogLevel::INFO)
-#define LOG_WARN(logger)  LOG_LEVEL(logger, tide::LogLevel::WARN)
-#define LOG_ERROR(logger) LOG_LEVEL(logger, tide::LogLevel::ERROR)
-#define LOG_FATAL(logger) LOG_LEVEL(logger, tide::LogLevel::FATAL)
+#define TIDE_LOG_DEBUG(logger) TIDE_LOG_LEVEL(logger, tide::LogLevel::DEBUG)
+#define TIDE_LOG_INFO(logger)  TIDE_LOG_LEVEL(logger, tide::LogLevel::INFO)
+#define TIDE_LOG_WARN(logger)  TIDE_LOG_LEVEL(logger, tide::LogLevel::WARN)
+#define TIDE_LOG_ERROR(logger) TIDE_LOG_LEVEL(logger, tide::LogLevel::ERROR)
+#define TIDE_LOG_FATAL(logger) TIDE_LOG_LEVEL(logger, tide::LogLevel::FATAL)
 
 
-#define LOG_FMT_LEVEL(logger, level, fmt, ...) \
+#define TIDE_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if (logger->getLevel() <= level) \
         tide::LogEventWrap(tide::LogEvent::ptr(new tide::LogEvent(logger, level, \
             __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
 
-#define LOG_FMT_DEBUG(logger, fmt, ...) LOG_FMT_LEVEL(logger, tide::LogLevel::DEBUG, fmt, __VA_ARGS__)
-#define LOG_FMT_INFO(logger, fmt, ...)  LOG_FMT_LEVEL(logger, tide::LogLevel::INFO, fmt, __VA_ARGS__)
-#define LOG_FMT_WARN(logger, fmt, ...)  LOG_FMT_LEVEL(logger, tide::LogLevel::WARN, fmt, __VA_ARGS__)
-#define LOG_FMT_ERROR(logger, fmt, ...) LOG_FMT_LEVEL(logger, tide::LogLevel::ERROR, fmt, __VA_ARGS__)
-#define LOG_FMT_FATAL(logger, fmt, ...) LOG_FMT_LEVEL(logger, tide::LogLevel::FATAL, fmt, __VA_ARGS__)
+#define TIDE_LOG_FMT_DEBUG(logger, fmt, ...) TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define TIDE_LOG_FMT_INFO(logger, fmt, ...)  TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::INFO, fmt, __VA_ARGS__)
+#define TIDE_LOG_FMT_WARN(logger, fmt, ...)  TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::WARN, fmt, __VA_ARGS__)
+#define TIDE_LOG_FMT_ERROR(logger, fmt, ...) TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::ERROR, fmt, __VA_ARGS__)
+#define TIDE_LOG_FMT_FATAL(logger, fmt, ...) TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::FATAL, fmt, __VA_ARGS__)
 
-#define LOG_ROOT() tide::LoggerMgr::GetInstance()->getRoot()
+#define TIDE_LOG_ROOT() tide::LoggerMgr::GetInstance()->getRoot()
+#define TIDE_LOG_NAME(name) tide::LoggerMgr::GetInstance()->getLogger(name)
 
 namespace tide
 {
@@ -55,6 +55,7 @@ namespace tide
     public:
         enum Level
         {
+            UNKNOWN = 0,
             DEBUG = 1,
             INFO = 2,
             WARN = 3,
@@ -62,6 +63,7 @@ namespace tide
             FATAL = 5
         };
         static const char *ToString(LogLevel::Level level);
+        static LogLevel::Level FromString(const std::string &str);
     };
 
 
@@ -142,10 +144,12 @@ namespace tide
             virtual void format(std::ostream &os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
         };
         void init();
+        bool isError() const { return m_error; }
 
     private:
         std::string m_pattern;
         std::vector<FormatItem::ptr> m_items;
+        bool m_error = false;
     };
 
     ////////////////////////////////////////////////////////////////////
@@ -159,7 +163,7 @@ namespace tide
 
         virtual ~LogAppender();
 
-        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+        virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) = 0;
 
         void setLevel(LogLevel::Level val) { m_level = val; }
         void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
@@ -177,7 +181,7 @@ namespace tide
     {
     public:
         using ptr = std::shared_ptr<StdoutLogAppender>;
-        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
+        virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
     };
 
     /**
@@ -188,7 +192,7 @@ namespace tide
     public:
         using ptr = std::shared_ptr<FileLogAppender>;
         FileLogAppender(const std::string &filename);
-        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
+        virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
         bool reopen();
 
     private:
@@ -216,15 +220,22 @@ namespace tide
 
         void addAppender(LogAppender::ptr appender);
         void delAppender(LogAppender::ptr appender);
+        void clearAppenders();
+
         void setLevel(LogLevel::Level val) { m_level = val; }
-        LogLevel::Level getLevel() const { return m_level; }
+        void setFormatter(const std::string& val);
+        void setFormatter(LogFormatter::ptr val);
+
         const std::string &getName() const { return m_name; }
+        LogLevel::Level getLevel() const { return m_level; }
+        LogFormatter::ptr getFormatter() { return m_formatter; }
 
     private:
         std::string m_name;                      // 日志名称
         LogLevel::Level m_level;                 // 日志级别
         std::list<LogAppender::ptr> m_appenders; // Appender集合
         LogFormatter::ptr m_formatter;           // 默认Formatter
+        Logger::ptr m_root;
     };
 
 
@@ -235,9 +246,9 @@ namespace tide
     {
         public:
             LoggerManager();
-            Logger::ptr getLogger(const std::string& name);
-
             void init();
+
+            Logger::ptr getLogger(const std::string& name);
             Logger::ptr getRoot() const { return m_root; }
 
         private:
@@ -247,4 +258,4 @@ namespace tide
     using LoggerMgr = tide::SingletonPtr<LoggerManager>;
 
 } // namespace tide
-#endif // __LOG_H__
+#endif // __TIDE_LOG_H__
