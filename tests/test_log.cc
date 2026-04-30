@@ -30,17 +30,17 @@ int main() {
 
     logger->log(tide::LogLevel::DEBUG, event);
 
-    LOG_DEBUG(logger) << "!Hello, World!";
-    LOG_INFO(logger) <<  "!!Hello, World!";
-    LOG_WARN(logger) <<  "!!!Hello, World!";
-    LOG_ERROR(logger) << "!!!!Hello, World!";
-    LOG_FATAL(logger) << "!!!!!Hello, World!";
+    TIDE_LOG_DEBUG(logger) << "!Hello, World!";
+    TIDE_LOG_INFO(logger) <<  "!!Hello, World!";
+    TIDE_LOG_WARN(logger) <<  "!!!Hello, World!";
+    TIDE_LOG_ERROR(logger) << "!!!!Hello, World!";
+    TIDE_LOG_FATAL(logger) << "!!!!!Hello, World!";
 
-    LOG_FMT_ERROR(logger, "Hello, %s!", "World");
-    LOG_FMT_FATAL(logger, "Hello, %s!", "World");
+    TIDE_LOG_FMT_ERROR(logger, "Hello, %s!", "World");
+    TIDE_LOG_FMT_FATAL(logger, "Hello, %s!", "World");
 
     auto log = tide::LoggerMgr::GetInstance()->getLogger("xx");
-    LOG_INFO(log) << "Hello, LoggerManager!";
+    TIDE_LOG_INFO(log) << "Hello, LoggerManager!";
 
     return 0;
 }

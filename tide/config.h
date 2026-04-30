@@ -4,8 +4,15 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <boost/lexical_cast.hpp>
+#include <vector>
+#include <list>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <functional>
 
+#include <boost/lexical_cast.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include "log.h"
@@ -25,6 +32,7 @@ namespace tide
 
         const std::string &getName() const { return m_name; }
         const std::string &getDescription() const { return m_description; }
+        virtual std::string getTypeName() const = 0;
 
         virtual std::string toString() const = 0;
         virtual bool fromString(const std::string &str) = 0;
@@ -79,17 +87,221 @@ namespace tide
         }
     };
 
+
+    template<class T>
+    class LexicalCast<std::string, std::list<T>>
+    {
+    public:
+        std::list<T> operator()(const std::string& v)
+        {
+            YAML::Node node = YAML::Load(v);
+            std::list<T> vec;
+            std::stringstream ss;
+            for(size_t i = 0; i < node.size(); ++i){
+                ss.str("");
+                ss << node[i];
+                vec.push_back( LexicalCast<std::string, T>()(ss.str()));
+            }
+            return vec;
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::list<T>, std::string>
+    {
+    public:
+        std::string operator()(const std::list<T>& v)
+        {
+            YAML::Node node;
+            for(auto &i : v){
+                node.push_back(YAML::Load(LexicalCast<T, std::string>() (i)));
+            }
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::string, std::set<T>>
+    {
+    public:
+        std::set<T> operator()(const std::string& v)
+        {
+            YAML::Node node = YAML::Load(v);
+            typename std::set<T> vec;
+            std::stringstream ss;
+            for(size_t i = 0; i < node.size(); ++i){
+                ss.str("");
+                ss << node[i];
+                vec.insert( LexicalCast<std::string, T>()(ss.str()));
+            }
+            return vec;
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::set<T>, std::string>
+    {
+    public:
+        std::string operator()(const std::set<T>& v)
+        {
+            YAML::Node node;
+            for(auto &i : v){
+                node.push_back(YAML::Load(LexicalCast<T, std::string>() (i)));
+            }
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::string, std::unordered_set<T>>
+    {
+    public:
+        std::unordered_set<T> operator()(const std::string& v)
+        {
+            YAML::Node node = YAML::Load(v);
+            typename std::unordered_set<T> vec;
+            std::stringstream ss;
+            for(size_t i = 0; i < node.size(); ++i){
+                ss.str("");
+                ss << node[i];
+                vec.insert( LexicalCast<std::string, T>()(ss.str()));
+            }
+            return vec;
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::unordered_set<T>, std::string>
+    {
+    public:
+        std::string operator()(const std::unordered_set<T>& v)
+        {
+            YAML::Node node;
+            for(auto &i : v){
+                node.push_back(YAML::Load(LexicalCast<T, std::string>() (i)));
+            }
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::string, std::map<std::string, T> >
+    {
+    public:
+        std::map<std::string, T> operator()(const std::string& v)
+        {
+            YAML::Node node = YAML::Load(v);
+            typename std::map<std::string, T> vec;
+            std::stringstream ss;
+            for(auto it = node.begin(); it != node.end(); ++it){
+                ss.str("");
+                ss << it->second;
+                vec.insert( std::make_pair(it->first.Scalar(), LexicalCast<std::string, T>()(ss.str())));
+            }
+            return vec;
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::map<std::string, T>, std::string>
+    {
+    public:
+        std::string operator()(const std::map<std::string, T>& v)
+        {
+            YAML::Node node;
+            for(auto &i : v){
+                node.push_back(YAML::Load(LexicalCast<T, std::string>() (i.second)));
+            }
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::string, std::unordered_map<std::string, T> >
+    {
+    public:
+        std::unordered_map<std::string, T> operator()(const std::string& v)
+        {
+            YAML::Node node = YAML::Load(v);
+            typename std::unordered_map<std::string, T> vec;
+            std::stringstream ss;
+            for(auto it = node.begin(); it != node.end(); ++it){
+                ss.str("");
+                ss << it->second;
+                vec.insert( std::make_pair(it->first.Scalar(), LexicalCast<std::string, T>()(ss.str())));
+            }
+            return vec;
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::unordered_map<std::string, T>, std::string>
+    {
+    public:
+        std::string operator()(const std::unordered_map<std::string, T>& v)
+        {
+            YAML::Node node;
+            for(auto &i : v){
+                node.push_back(YAML::Load(LexicalCast<T, std::string>() (i.second)));
+            }
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
     // 这个模板类用于配置变量，继承自ConfigVarBase。它包含一个值，并提供了将值转换为字符串和从字符串转换为值的方法。
     template <class T, class FromStr = LexicalCast<std::string, T>, class ToStr = LexicalCast<T, std::string>>
     class ConfigVar : public ConfigVarBase
     {
     public:
         using ptr = std::shared_ptr<ConfigVar<T>>;
+        using on_change_cb = std::function<void (const T& old_value, const T& new_value)>;
+
         ConfigVar(const std::string &name, const T &default_value, const std::string &description = "")
             : ConfigVarBase(name, description), m_value(default_value) {}
 
         const T &getValue() const { return m_value; }
-        void setValue(const T &value) { m_value = value; }
+        void setValue(const T &value) 
+        {
+            if(value == m_value){
+                return;
+            }
+            for(auto &i : m_cbs){
+                i.second(m_value, value);
+            }
+            m_value = value;
+        }
+
+        std::string getTypeName() const override{return typeid(T).name();}
+
+        void addListener(uint16_t key, on_change_cb cb)
+        {
+            m_cbs[key] = cb;
+        }
+        void delListener(uint16_t key)
+        {
+            m_cbs.erase(key);
+        }
+
+        on_change_cb getListener(uint16_t key)
+        {
+            auto it = m_cbs.find(key);
+            return it == m_cbs.end() ? nullptr : it->second;
+        }
+
+        void clearListener()
+        {
+            m_cbs.clear();
+        }
 
         std::string toString() const override
         {
@@ -100,7 +312,7 @@ namespace tide
             }
             catch (const std::exception &e)
             {
-                LOG_ERROR(LOG_ROOT()) << "ConfigVar::toString exception: "
+                TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ConfigVar::toString exception: "
                                       << e.what() << " convert: " << typeid(m_value).name() << " to string";
             }
             return "";
@@ -115,7 +327,7 @@ namespace tide
             }
             catch (const std::exception &e)
             {
-                LOG_ERROR(LOG_ROOT()) << "ConfigVar::fromString exception: "
+                TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ConfigVar::fromString exception: "
                                       << e.what() << " convert: " << typeid(m_value).name() << " to string";
             }
             return false;
@@ -123,6 +335,9 @@ namespace tide
 
     private:
         T m_value;
+
+        // 变更回调函数组，key为uint16_t类型的唯一标识符，用hash，value为回调函数
+        std::map<uint16_t, on_change_cb> m_cbs;
     }; // class ConfigVar
 
 
@@ -135,30 +350,35 @@ namespace tide
         template <class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name, const T &default_value, const std::string &description = "")
         {
-
-            auto tmp = Lookup<T>(name);
-            if (tmp)
-            {
-                LOG_INFO(LOG_ROOT()) << "Lookup name=" << name << " exists";
-                return tmp;
+            auto it = GetDatas.find(name);
+            if(it != GetDatas.end()){
+                auto tmp = std::dynamic_pointer_cast<ConfigVar<T>> (it->second);
+                if(tmp){
+                    TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "Lookup name=" << name << "exists";
+                    return tmp;
+                }else{
+                    TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "Lookup name=" << name <<  " exists but type not " << typeid(T).name()
+                        << " real_type=" << it->second->getTypeName() << " " << it->second->toString();
+                    return nullptr;
+                }
             }
 
             if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789") != std::string::npos)
             {
-                LOG_ERROR(LOG_ROOT()) << "Lookup name invalid " << name;
+                TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "Lookup name invalid " << name;
                 throw std::invalid_argument(name);
             }
 
             typename ConfigVar<T>::ptr v(new ConfigVar<T>(name, default_value, description));
-            s_datas[name] = v;
+            GetDatas()[name] = v;
             return v;
         }
 
         template <class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name)
         {
-            auto it = s_datas.find(name);
-            if (it == s_datas.end())
+            auto it = GetDatas.find(name);
+            if (it == GetDatas.end())
             {
                 return nullptr;
             }
@@ -169,7 +389,11 @@ namespace tide
         static ConfigVarBase::ptr LookupBase(const std::string &name);
 
     private:
-        static ConfigVarMap s_datas;
+        static ConfigVarMap& GetDatas() 
+        { 
+            static ConfigVarMap s_datas;
+            return s_datas; 
+        }
 
     }; // class Config
 
