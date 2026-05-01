@@ -350,8 +350,8 @@ namespace tide
         template <class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name, const T &default_value, const std::string &description = "")
         {
-            auto it = GetDatas.find(name);
-            if(it != GetDatas.end()){
+            auto it = GetDatas().find(name);
+            if(it != GetDatas().end()){
                 auto tmp = std::dynamic_pointer_cast<ConfigVar<T>> (it->second);
                 if(tmp){
                     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "Lookup name=" << name << "exists";
@@ -377,8 +377,8 @@ namespace tide
         template <class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name)
         {
-            auto it = GetDatas.find(name);
-            if (it == GetDatas.end())
+            auto it = GetDatas().find(name);
+            if (it == GetDatas().end())
             {
                 return nullptr;
             }

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <stdint.h>
+#include <cstring>
 
 namespace tide
 {

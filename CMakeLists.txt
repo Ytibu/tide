@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(tide)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/utils.cmake)
+tide_define_project_macros()
+
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -std=c++11 -Wall -Wno-deprecated -Werror -Wno-unused-function")
 

@@ -6,6 +6,8 @@
 #include "../tide/log.h"
 #include "../tide/utils.h"
 
+#include <iostream>
+
 tide::ConfigVar<int>::ptr g_int_value_config = tide::Config::Lookup("system.port", (int)111, "system port");
 tide::ConfigVar<float>::ptr g_int_valuex_config = tide::Config::Lookup("system.port1", (float)8080, "system port1");
 tide::ConfigVar<float>::ptr g_float_value_config = tide::Config::Lookup("system.value", (float)222.22f, "system value");
@@ -193,8 +195,23 @@ void test_class()
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "class.vec_map after: " << g_person_vec_map->toString();
 }
 
+void test_log(){
+    static tide::Logger::ptr system_log = TIDE_LOG_NAME("system");
+    TIDE_LOG_INFO(system_log) << "hello system log" << std::endl;
+
+    std::cout << tide::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    YAML::Node root = YAML::LoadFile("/home/dingjr/sourceCode/devlop/Tide/config/mylog.yaml");
+    tide::Config::LoadFromYaml(root);
+    std::cout << "=============================" << std::endl;
+    std::cout << tide::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    std::cout << "=============================" << std::endl;
+    std::cout << root << std::endl;
+    TIDE_LOG_INFO(system_log) << "hello system log after config" << std::endl;
+}
+
 int main()
 {
-    test_class();
+    // test_class();
+    test_log();
     return 0;
 }
