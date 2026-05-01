@@ -45,6 +45,11 @@ namespace tide
     // 前向声明
     
     class Logger;
+    class LoggerManager;
+    class LogEvent;
+    class LogEventWrap;
+    class LogFormatter;
+    class LogAppender;
 
     /////////////////////////////////////////////////////////////////
     /**
@@ -140,11 +145,12 @@ namespace tide
             using ptr = std::shared_ptr<FormatItem>;
 
             FormatItem(const std::string &fmt = "");
-            virtual ~FormatItem();
+            virtual ~FormatItem() {}
             virtual void format(std::ostream &os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
         };
         void init();
         bool isError() const { return m_error; }
+        const std::string getPattern() const { return m_pattern; }
 
     private:
         std::string m_pattern;
@@ -158,22 +164,27 @@ namespace tide
      */
     class LogAppender
     {
+        friend class Logger;
     public:
         using ptr = std::shared_ptr<LogAppender>;
 
         virtual ~LogAppender();
 
-        virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
 
         void setLevel(LogLevel::Level val) { m_level = val; }
-        void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
         LogLevel::Level getLevel() const { return m_level; }
-        LogFormatter::ptr getLogFormatter() const { return m_formatter; }
-    private:
+
+        void setFormatter(LogFormatter::ptr val);
+        LogFormatter::ptr getFormatter() const { return m_formatter; } 
+        
+        virtual std::string toYamlString() = 0;
+
+    protected:
         LogLevel::Level m_level = LogLevel::DEBUG;
         LogFormatter::ptr m_formatter;
+        bool m_hasFormatter  = false;
     };
-
     /**
      * 日志终端输出 继承 日志输出
      */
@@ -181,7 +192,8 @@ namespace tide
     {
     public:
         using ptr = std::shared_ptr<StdoutLogAppender>;
-        virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
+        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
+        virtual std::string toYamlString()  override;
     };
 
     /**
@@ -192,8 +204,9 @@ namespace tide
     public:
         using ptr = std::shared_ptr<FileLogAppender>;
         FileLogAppender(const std::string &filename);
-        virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
+        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
         bool reopen();
+        virtual std::string toYamlString() override;
 
     private:
         std::string m_fileName;
@@ -206,6 +219,7 @@ namespace tide
      */
     class Logger : public std::enable_shared_from_this<Logger>
     {
+    friend class LoggerManager;
     public:
         using ptr = std::shared_ptr<Logger>;
 
@@ -230,6 +244,8 @@ namespace tide
         LogLevel::Level getLevel() const { return m_level; }
         LogFormatter::ptr getFormatter() { return m_formatter; }
 
+        std::string toYamlString() const;
+
     private:
         std::string m_name;                      // 日志名称
         LogLevel::Level m_level;                 // 日志级别
@@ -250,6 +266,8 @@ namespace tide
 
             Logger::ptr getLogger(const std::string& name);
             Logger::ptr getRoot() const { return m_root; }
+
+            std::string toYamlString();
 
         private:
             std::map<std::string, Logger::ptr> m_loggers;

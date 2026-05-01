@@ -89,15 +89,22 @@ namespace tide
 
     LogLevel::Level LogLevel::FromString(const std::string &str)
     {
-#define XX(name) \
-        if(str == #name){  \
-            return LogLevel::name; \
-        }
-        XX(DEBUG);
-        XX(INFO);
-        XX(WARN);
-        XX(ERROR);
-        XX(FATAL);
+#define XX(Level, v)            \
+    if (str == #v)              \
+    {                           \
+        return LogLevel::Level; \
+    }
+        XX(DEBUG, debug);
+        XX(INFO, info);
+        XX(WARN, warn);
+        XX(ERROR, error);
+        XX(FATAL, fatal);
+
+        XX(DEBUG, DEBUG);
+        XX(INFO, INFO);
+        XX(WARN, WARN);
+        XX(ERROR, ERROR);
+        XX(FATAL, FATAL);
         return LogLevel::UNKNOWN;
 #undef XX
     }
@@ -126,9 +133,6 @@ namespace tide
      * FormatItem 格式节点
      */
     LogFormatter::FormatItem::FormatItem(const std::string &fmt)
-    {
-    }
-    LogFormatter::FormatItem::~FormatItem()
     {
     }
 
@@ -304,8 +308,105 @@ namespace tide
         }
     };
 
+    ////////////////////////////////////////
     /**
-     * 日志输出
+     * 日志输出地址
+     */
+
+    LogAppender::~LogAppender()
+    {
+    }
+
+    void LogAppender::setFormatter(LogFormatter::ptr val)
+    {
+        m_formatter = val;
+        if (m_formatter)
+        {
+            m_hasFormatter = true;
+        }
+        else
+        {
+            m_hasFormatter = false;
+        }
+    }
+
+    /**
+     * 日志终端打印
+     */
+    void StdoutLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event)
+    {
+        if (level >= m_level)
+        {
+            std::cout << m_formatter->format(logger, level, event);
+        }
+    }
+
+    std::string StdoutLogAppender::toYamlString()
+    {
+        YAML::Node node;
+        node["type"] = "StdoutLogAppender";
+        if (m_level != LogLevel::UNKNOWN)
+        {
+            node["level"] = LogLevel::ToString(m_level);
+        }
+        if (m_formatter && m_hasFormatter)
+        {
+            node["formatter"] = m_formatter->getPattern();
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
+    /**
+     * 日志写入文件
+     */
+    FileLogAppender::FileLogAppender(const std::string &filename)
+        : m_fileName(filename)
+    {
+        reopen();
+    }
+
+    std::string FileLogAppender::toYamlString()
+    {
+        YAML::Node node;
+        node["type"] = "FileLogAppender";
+        node["file"] = m_fileName;
+        if (m_level != LogLevel::UNKNOWN)
+        {
+            node["level"] = LogLevel::ToString(m_level);
+        }
+        if (m_formatter && m_hasFormatter)
+        {
+            node["formatter"] = m_formatter->getPattern();
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
+    //!!!!!!!!!!!!!!! m_level m_formatter
+    void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event)
+    {
+        if (level >= m_level)
+        {
+            m_filestream << m_formatter->format(logger, level, event);
+        }
+    }
+
+    bool FileLogAppender::reopen()
+    {
+        if (m_filestream)
+        {
+            m_filestream.close();
+        }
+        m_filestream.open(m_fileName);
+        return static_cast<bool>(m_filestream);
+    }
+
+    /////////////////////////////////////////////////////////
+    /**
+     * 日志
      */
     Logger::Logger(const std::string &name)
         : m_name(name), m_level(LogLevel::DEBUG)
@@ -314,15 +415,14 @@ namespace tide
 
         if (m_name == "root")
         {
-            m_appenders.push_back(LogAppender::ptr(new StdoutLogAppender));
+            addAppender(LogAppender::ptr(new StdoutLogAppender));
         }
     }
-
     void Logger::addAppender(LogAppender::ptr appender)
     {
-        if (!appender->getLogFormatter())
+        if (!appender->getFormatter())
         {
-            appender->setFormatter(m_formatter);
+            appender->m_formatter = m_formatter;
         }
         m_appenders.push_back(appender);
     }
@@ -343,6 +443,27 @@ namespace tide
         m_appenders.clear();
     }
 
+    std::string Logger::toYamlString() const
+    {
+        YAML::Node node;
+        node["name"] = m_name;
+        if (m_level != LogLevel::UNKNOWN)
+        {
+            node["level"] = LogLevel::ToString(m_level);
+        }
+        if (m_formatter)
+        {
+            node["formatter"] = m_formatter->getPattern();
+        }
+        for (auto &appender : m_appenders)
+        {
+            node["appenders"].push_back(YAML::Load(appender->toYamlString()));
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
     void Logger::setFormatter(const std::string &val)
     {
         tide::LogFormatter::ptr new_val(new tide::LogFormatter(val));
@@ -351,11 +472,17 @@ namespace tide
             std::cout << "Logger setFormatter name=" << m_name << " value=" << val << " invalid formatter" << std::endl;
             return;
         }
-        m_formatter = new_val;
+        //m_formatter = new_val;
+        setFormatter(new_val);
     }
     void Logger::setFormatter(LogFormatter::ptr val)
     {
         m_formatter = val;
+        for(auto &i : m_appenders){
+            if(!i->m_hasFormatter){
+                i->m_formatter = m_formatter;
+            }
+        }
     }
 
     void Logger::log(LogLevel::Level level, LogEvent::ptr event)
@@ -403,54 +530,6 @@ namespace tide
         log(LogLevel::FATAL, event);
     }
 
-    ////////////////////////////////////////
-    /**
-     * 日志输出地址
-     */
-
-    LogAppender::~LogAppender()
-    {
-    }
-
-    /**
-     * 日志终端打印
-     */
-    void StdoutLogAppender::log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event)
-    {
-        if (level >= logger->getLevel())
-        {
-            std::cout << getLogFormatter()->format(logger, level, event);
-        }
-    }
-
-    /**
-     * 日志写入文件
-     */
-    FileLogAppender::FileLogAppender(const std::string &filename)
-        : m_fileName(filename)
-    {
-        reopen();
-    }
-
-    //!!!!!!!!!!!!!!! m_level m_formatter
-    void FileLogAppender::log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event)
-    {
-        if (level >= logger->getLevel())
-        {
-            m_filestream << getLogFormatter()->format(logger, level, event);
-        }
-    }
-
-    bool FileLogAppender::reopen()
-    {
-        if (m_filestream)
-        {
-            m_filestream.close();
-        }
-        m_filestream.open(m_fileName);
-        return static_cast<bool>(m_filestream);
-    }
-
     ///////////////////////////////////////////////////
 
     /**
@@ -459,9 +538,28 @@ namespace tide
     LoggerManager::LoggerManager()
     {
         m_root.reset(new Logger);
-        m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
+        // m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
+        m_loggers[m_root->getName()] = m_root;
         init();
     }
+
+    void LoggerManager::init()
+    {
+        // m_root = getLogger("root");
+    }
+
+    std::string LoggerManager::toYamlString()
+    {
+        YAML::Node node;
+        for (auto &i : m_loggers)
+        {
+            node.push_back(YAML::Load(i.second->toYamlString()));
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
     Logger::ptr LoggerManager::getLogger(const std::string &name)
     {
         auto it = m_loggers.find(name);
@@ -478,7 +576,7 @@ namespace tide
     struct LogAppenderDefine
     {
         int type = 0; // 1 File 2 Stdout
-        LogLevel::Level level = LogLevel::DEBUG;
+        LogLevel::Level level = LogLevel::UNKNOWN;
         std::string formatter;
         std::string file;
 
@@ -491,7 +589,7 @@ namespace tide
     struct LogDefine
     {
         std::string name;
-        LogLevel::Level level = LogLevel::DEBUG;
+        LogLevel::Level level = LogLevel::UNKNOWN;
         std::string formatter;
         std::vector<LogAppenderDefine> appenders;
 
@@ -506,8 +604,7 @@ namespace tide
         }
     };
 
-
-    template<>
+    template <>
     class LexicalCast<std::string, std::set<LogDefine>>
     {
     public:
@@ -516,41 +613,54 @@ namespace tide
             YAML::Node node = YAML::Load(v);
             std::set<LogDefine> se;
             std::stringstream ss;
-            for(size_t i = 0; i < se.size(); ++i){
+            for (size_t i = 0; i < node.size(); ++i)
+            {
                 auto n = node[i];
-                if(n["name"].IsDefined()){
+                if (!n["name"].IsDefined())
+                {
                     std::cout << "log config error: name is null, " << n << std::endl;
                     continue;
                 }
                 LogDefine ld;
                 ld.name = n["name"].as<std::string>();
                 ld.level = LogLevel::FromString(n["level"].IsDefined() ? n["level"].as<std::string>() : "");
-                if(n["formatter"].IsDefined()){
+                if (n["formatter"].IsDefined())
+                {
                     ld.formatter = n["formatter"].as<std::string>();
                 }
-                if(n["appenders"].IsDefined()){
-                    for(size_t x = 0; x < n["appenders"].size(); ++x){
+                if (n["appenders"].IsDefined())
+                {
+                    for (size_t x = 0; x < n["appenders"].size(); ++x)
+                    {
                         auto a = n["appenders"][x];
-                        
-                        if(!a["type"].IsDefined()){
+
+                        if (!a["type"].IsDefined())
+                        {
                             std::cout << "log config error: appender type is null, " << a << std::endl;
                             continue;
                         }
                         std::string type = a["type"].as<std::string>();
                         LogAppenderDefine lad;
-                        if(type == "FileLogAppender"){
+                        if (type == "FileLogAppender")
+                        {
                             lad.type = 1;
-                            if(!a["file"].IsDefined()){
+                            if (!a["file"].IsDefined())
+                            {
                                 std::cout << "log config error: appender file is null, " << a << std::endl;
                                 continue;
                             }
                             lad.file = a["file"].as<std::string>();
-                            if(n["formatter"].IsDefined()){
-                                lad.formatter = n["formatter"].as<std::string>();
+                            if (a["formatter"].IsDefined())
+                            {
+                                lad.formatter = a["formatter"].as<std::string>();
                             }
-                        }else if(type == "StdoutLogAppender"){
+                        }
+                        else if (type == "StdoutLogAppender")
+                        {
                             lad.type = 2;
-                        }else{
+                        }
+                        else
+                        {
                             std::cout << "log config error: appender type is invalid, " << a << std::endl;
                             continue;
                         }
@@ -558,33 +668,53 @@ namespace tide
                         ld.appenders.push_back(lad);
                     }
                 }
+                //std::cout << "load log config: " << ld.name << " " << ld.level << " " << ld.formatter << " appender size=" << ld.appenders.size() << std::endl;
+                se.insert(ld);
             }
             return se;
         }
     };
 
-    template<>
+    template <>
     class LexicalCast<std::set<LogDefine>, std::string>
     {
     public:
-        std::string operator()(const std::set<LogDefine> &v){
+        std::string operator()(const std::set<LogDefine> &v)
+        {
             YAML::Node node;
-            for(auto &i : v){
+            for (auto &i : v)
+            {
                 YAML::Node n;
-                if(!n["name"].IsDefined()){
-                    std::cout << "log config error: name is null, " << n << std::endl;
-                    continue;
+                n["name"] = i.name;
+                if (i.level != LogLevel::UNKNOWN)
+                {
+                    n["level"] = LogLevel::ToString(i.level);
                 }
-                LogDefine ld;
-                ld.name = n["name"].as<std::string>();
-                n["level"] = LogLevel::ToString(i.level);
-                n["formatter"] = i.formatter;
-                for(auto &a : i.appenders){
+                if (!i.formatter.empty())
+                {
+                    n["formatter"] = i.formatter;
+                }
+
+                for (auto &a : i.appenders)
+                {
                     YAML::Node na;
-                    na["type"] = a.type;
-                    na["level"] = LogLevel::ToString(a.level);
-                    na["formatter"] = a.formatter;
-                    na["file"] = a.file;
+                    if (a.type == 1)
+                    {
+                        na["type"] = "FileLogAppender";
+                        na["file"] = a.file;
+                    }
+                    else if (a.type == 2)
+                    {
+                        na["type"] = "StdoutLogAppender";
+                    }
+                    if (a.level != LogLevel::UNKNOWN)
+                    {
+                        na["level"] = LogLevel::ToString(a.level);
+                    }
+                    if (!a.formatter.empty())
+                    {
+                        na["formatter"] = a.formatter;
+                    }
                     n["appenders"].push_back(na);
                 }
                 node.push_back(n);
@@ -595,24 +725,24 @@ namespace tide
         }
     };
 
-    tide::ConfigVar<std::set<LogDefine>> g_log_defines = tide::Config::Lookup("logs", std::set<LogDefine>(), "logs config");
+    tide::ConfigVar<std::set<LogDefine>>::ptr g_log_defines = tide::Config::Lookup("logs", std::set<LogDefine>(), "logs config");
 
     struct LogIniter
     {
         LogIniter()
         {
-            g_log_defines->addListener(0xF1E231, [](const std::set<LogDefine> &old_value, const std::set<LogDefine> &new_value){
+            g_log_defines->addListener(30000, [](const std::set<LogDefine> &old_value, const std::set<LogDefine> &new_value)
+                                       {
                 TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "on_logger_conf_changed";
                 for(auto &i : new_value){
                     auto it = old_value.find(i);
                     tide::Logger::ptr logger;
                     if(it == old_value.end()){
-                        // 新增Logger
-                        logger.reset(new tide::Logger(i.name));
+                        logger = TIDE_LOG_NAME(i.name);
                     }else{
                         // 修改Logger
                         if(!(i == *it)){
-                        logger = TIDE_LOG_NAME(i.name);
+                            logger = TIDE_LOG_NAME(i.name);
                         }
                     }
 
@@ -627,9 +757,18 @@ namespace tide
                         if(a.type == 1){
                             appender.reset(new tide::FileLogAppender(a.file));
                         }else if(a.type == 2){
-                            appender.reset(new tide::StdoutLogAppender);
+                            appender.reset(new tide::StdoutLogAppender());
                         }
                         appender->setLevel(a.level);
+                        if(!a.formatter.empty()){
+                            LogFormatter::ptr fmt(new LogFormatter(a.formatter));
+                            if(!fmt->isError()){
+                                appender->setFormatter(fmt);
+                            }else{
+                                std::cout << "log.name" << i.name << "appender type =" << a.type
+                                          << " formatter =" << a.formatter << "is invalid" << std::endl;
+                            }
+                        }
                         logger->addAppender(appender);
                     }
 
@@ -648,11 +787,6 @@ namespace tide
     };
 
     static LogIniter __log_init;
-
-    void LoggerManager::init()
-    {
-        m_root = getLogger("root");
-    }
 
     ////////////////////////////////////////////////
     ////////////////////////////////////////////////
