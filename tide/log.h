@@ -18,7 +18,7 @@
 #define TIDE_LOG_LEVEL(logger, level) \
     if (logger->getLevel() <= level) \
         tide::LogEventWrap(tide::LogEvent::ptr(new tide::LogEvent(logger, level, \
-            __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0)))).getSS()
+            __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0), tide::Thread::GetName()))).getSS()
 
 #define TIDE_LOG_DEBUG(logger) TIDE_LOG_LEVEL(logger, tide::LogLevel::DEBUG)
 #define TIDE_LOG_INFO(logger)  TIDE_LOG_LEVEL(logger, tide::LogLevel::INFO)
@@ -30,7 +30,7 @@
 #define TIDE_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if (logger->getLevel() <= level) \
         tide::LogEventWrap(tide::LogEvent::ptr(new tide::LogEvent(logger, level, \
-            __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+            __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0), tide::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 #define TIDE_LOG_FMT_DEBUG(logger, fmt, ...) TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::DEBUG, fmt, __VA_ARGS__)
 #define TIDE_LOG_FMT_INFO(logger, fmt, ...)  TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::INFO, fmt, __VA_ARGS__)
@@ -84,7 +84,7 @@ namespace tide
     public:
         using ptr = std::shared_ptr<LogEvent>;
         LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char *file, int32_t line, uint32_t elapse,
-                 uint32_t threadId, uint32_t fiberId, uint64_t time);
+                 uint32_t threadId, uint32_t fiberId, uint64_t time, const std::string& threadName);
 
         const char *getFile() const { return m_file; }
         int32_t getLine() const { return m_line; }
@@ -95,7 +95,7 @@ namespace tide
         std::string getContent() const { return m_ss.str(); }
         std::shared_ptr<Logger> getLogger() const { return m_logger; }
         LogLevel::Level getLevel() const { return m_level; }
-        std::string getThreadName() const{return "m_threadName";}
+        std::string getThreadName() const{return m_threadName;}
 
         std::stringstream& getSS() {return m_ss;}
 

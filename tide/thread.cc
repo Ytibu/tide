@@ -6,7 +6,7 @@
 namespace tide
 {
     static thread_local Thread *t_thread = nullptr;
-    static thread_local std::string t_thread_name = "UNKNOW";
+    static thread_local std::string t_thread_name = "UNKNOWN";
 
     static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
@@ -52,6 +52,9 @@ namespace tide
 
     void Thread::SetName(const std::string &name)
     {
+        if(name.empty()){
+            return;
+        }
         if (t_thread)
         {
             t_thread->m_name = name;
@@ -64,16 +67,13 @@ namespace tide
     }
 
     Thread::Thread(std::function<void()> cb, const std::string &name)
+    : m_cb(cb), m_name(name)
     {
-        m_cb = std::move(cb);
         if (name.empty())
         {
             m_name = "UNKNOWN";
         }
-        else
-        {
-            m_name = name;
-        }
+
         int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
         if (rt)
         {
@@ -109,13 +109,14 @@ namespace tide
     {
         Thread *thread = (Thread *)arg;
         t_thread = thread;
+        t_thread_name = thread->m_name;
         thread->m_id = tide::GetThreadId();
         pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
 
-        thread->m_semaphore.notify();
-
         std::function<void()> cb;
         cb.swap(thread->m_cb);
+
+        thread->m_semaphore.notify();
         cb();
 
         return 0;

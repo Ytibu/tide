@@ -22,9 +22,9 @@ namespace tide
      * LogEvent 日志事件
      */
     LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char *file,
-                       int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time)
+                       int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time, const std::string& threadName)
         : m_file(file), m_line(line), m_elapse(elapse), m_threadId(threadId),
-          m_fiberId(fiberId), m_time(time), m_level(level), m_logger(logger)
+          m_fiberId(fiberId), m_time(time), m_threadName(threadName), m_level(level), m_logger(logger)
     {
     }
 
@@ -436,10 +436,6 @@ namespace tide
     {
         m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
 
-        if (m_name == "root")
-        {
-            addAppender(LogAppender::ptr(new StdoutLogAppender));
-        }
     }
 
     // 7 8
