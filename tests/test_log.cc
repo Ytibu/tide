@@ -16,19 +16,19 @@ int main() {
 
     logger->addAppender(file_appender);
 
-    tide::LogEvent::ptr event(new tide::LogEvent(
-        logger,
-        tide::LogLevel::DEBUG,
-        __FILE__,
-        __LINE__,
-        0, // elapse
-        tide::GetThreadId(),
-        2, // fiber id or whatever the 6th param is
-        time(0)
-    ));
+    // tide::LogEvent::ptr event(new tide::LogEvent(
+    //     logger,
+    //     tide::LogLevel::DEBUG,
+    //     __FILE__,
+    //     __LINE__,
+    //     0, // elapse
+    //     tide::GetThreadId(),
+    //     2, // fiber id or whatever the 6th param is
+    //     time(0)
+    // ));
 
 
-    logger->log(tide::LogLevel::DEBUG, event);
+    //logger->log(tide::LogLevel::DEBUG, event);
 
     TIDE_LOG_DEBUG(logger) << "!Hello, World!";
     TIDE_LOG_INFO(logger) <<  "!!Hello, World!";

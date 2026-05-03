@@ -1,0 +1,12 @@
+#ifndef __TIDE_H__
+#define __TIDER_H__
+
+#include "log.h"
+#include "config.h"
+#include "noncopyable.h"
+#include "thread.h"
+#include "utils.h"
+#include "macro.h"
+#include "fiber.h"
+
+#endif // __TIDE_H__
