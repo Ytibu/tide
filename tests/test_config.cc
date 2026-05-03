@@ -179,7 +179,7 @@ void test_class()
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << prefix << ": size= " << m.size(); \
     }
 
-    g_person->addListener(1, [](const Person& old_value, const Person& new_value){
+    g_person->addListener([](const Person& old_value, const Person& new_value){
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "old_value=" << old_value.toString();
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "new_value=" << new_value.toString();
     });
@@ -187,7 +187,7 @@ void test_class()
     XX_PM(g_person_map, "class.map before");
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "class.vec_map before: " << g_person_vec_map->toString();
 
-    YAML::Node root = YAML::LoadFile("/home/dingjr/sourceCode/devlop/Tide/config/log.yaml");
+    YAML::Node root = YAML::LoadFile("/home/dingjr/sourceCode/devlop/Tide/conf/log2.yml");
     tide::Config::LoadFromYaml(root);
 
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "after: " << g_person->getValue().toString() << " - " << g_person->toString();
@@ -200,18 +200,26 @@ void test_log(){
     TIDE_LOG_INFO(system_log) << "hello system log" << std::endl;
 
     std::cout << tide::LoggerMgr::GetInstance()->toYamlString() << std::endl;
-    YAML::Node root = YAML::LoadFile("/home/dingjr/sourceCode/devlop/Tide/config/mylog.yaml");
+    YAML::Node root = YAML::LoadFile("/home/dingjr/sourceCode/devlop/Tide/conf/log2.yml");
     tide::Config::LoadFromYaml(root);
     std::cout << "=============================" << std::endl;
     std::cout << tide::LoggerMgr::GetInstance()->toYamlString() << std::endl;
     std::cout << "=============================" << std::endl;
     std::cout << root << std::endl;
     TIDE_LOG_INFO(system_log) << "hello system log after config" << std::endl;
+
+    system_log->setFormatter("%d%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
+     TIDE_LOG_INFO(system_log) << "hello system log after setFormatter" << std::endl;
 }
 
 int main()
 {
     // test_class();
     test_log();
+
+    tide::Config::Visit([](tide::ConfigVarBase::ptr var) {
+        TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "name=" << var->getName() << " description=" << var->getDescription()
+                                       << " typename=" << var->getTypeName() << " value=" << var->toString();
+    });
     return 0;
 }

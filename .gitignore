@@ -6,3 +6,4 @@ lib/
 CMakeFiles/
 log/
 config/
+conf/

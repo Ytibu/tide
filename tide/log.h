@@ -13,6 +13,7 @@
 
 #include "singleton.h"
 #include "utils.h"
+#include "thread.h"
 
 #define TIDE_LOG_LEVEL(logger, level) \
     if (logger->getLevel() <= level) \
@@ -50,6 +51,7 @@ namespace tide
     class LogEventWrap;
     class LogFormatter;
     class LogAppender;
+    class SpinkLock;
 
     /////////////////////////////////////////////////////////////////
     /**
@@ -144,7 +146,6 @@ namespace tide
         public:
             using ptr = std::shared_ptr<FormatItem>;
 
-            FormatItem(const std::string &fmt = "");
             virtual ~FormatItem() {}
             virtual void format(std::ostream &os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
         };
@@ -166,17 +167,17 @@ namespace tide
     {
         friend class Logger;
     public:
+        using MutexType = Mutex;
         using ptr = std::shared_ptr<LogAppender>;
 
-        virtual ~LogAppender();
-
+        virtual ~LogAppender(){}
         virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
 
         void setLevel(LogLevel::Level val) { m_level = val; }
         LogLevel::Level getLevel() const { return m_level; }
 
         void setFormatter(LogFormatter::ptr val);
-        LogFormatter::ptr getFormatter() const { return m_formatter; } 
+        LogFormatter::ptr getFormatter();
         
         virtual std::string toYamlString() = 0;
 
@@ -184,6 +185,7 @@ namespace tide
         LogLevel::Level m_level = LogLevel::DEBUG;
         LogFormatter::ptr m_formatter;
         bool m_hasFormatter  = false;
+        MutexType m_mutex;
     };
     /**
      * 日志终端输出 继承 日志输出
@@ -211,6 +213,7 @@ namespace tide
     private:
         std::string m_fileName;
         std::ofstream m_filestream;
+        uint64_t m_lastTime;
     };
 
     ///////////////////////////////////////////
@@ -221,6 +224,7 @@ namespace tide
     {
     friend class LoggerManager;
     public:
+        using MutexType = Mutex;
         using ptr = std::shared_ptr<Logger>;
 
         Logger(const std::string &name = "root");
@@ -236,19 +240,21 @@ namespace tide
         void delAppender(LogAppender::ptr appender);
         void clearAppenders();
 
-        void setLevel(LogLevel::Level val) { m_level = val; }
+        void setLevel(LogLevel::Level val);
+        LogLevel::Level getLevel() const { return m_level; }
+
         void setFormatter(const std::string& val);
         void setFormatter(LogFormatter::ptr val);
+        LogFormatter::ptr getFormatter();
 
         const std::string &getName() const { return m_name; }
-        LogLevel::Level getLevel() const { return m_level; }
-        LogFormatter::ptr getFormatter() { return m_formatter; }
 
-        std::string toYamlString() const;
+        std::string toYamlString();
 
     private:
         std::string m_name;                      // 日志名称
         LogLevel::Level m_level;                 // 日志级别
+        MutexType m_mutex;
         std::list<LogAppender::ptr> m_appenders; // Appender集合
         LogFormatter::ptr m_formatter;           // 默认Formatter
         Logger::ptr m_root;
@@ -261,17 +267,19 @@ namespace tide
     class LoggerManager
     {
         public:
+            using MutexType = Mutex;
             LoggerManager();
             void init();
 
             Logger::ptr getLogger(const std::string& name);
-            Logger::ptr getRoot() const { return m_root; }
+            Logger::ptr getRoot() const;
 
             std::string toYamlString();
 
         private:
             std::map<std::string, Logger::ptr> m_loggers;
             Logger::ptr m_root;
+            MutexType m_mutex;
     };
     using LoggerMgr = tide::SingletonPtr<LoggerManager>;
 

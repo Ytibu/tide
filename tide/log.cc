@@ -132,9 +132,8 @@ namespace tide
     /**
      * FormatItem 格式节点
      */
-    LogFormatter::FormatItem::FormatItem(const std::string &fmt)
-    {
-    }
+
+
 
     /**
      * 格式节点继承器
@@ -313,12 +312,10 @@ namespace tide
      * 日志输出地址
      */
 
-    LogAppender::~LogAppender()
-    {
-    }
-
+    // 1
     void LogAppender::setFormatter(LogFormatter::ptr val)
     {
+        MutexType::Lock lock(m_mutex);
         m_formatter = val;
         if (m_formatter)
         {
@@ -330,6 +327,13 @@ namespace tide
         }
     }
 
+    // 2
+    LogFormatter::ptr LogAppender::getFormatter()
+    {
+        MutexType::Lock lock(m_mutex);
+        return m_formatter;
+    }
+
     /**
      * 日志终端打印
      */
@@ -337,12 +341,14 @@ namespace tide
     {
         if (level >= m_level)
         {
+            MutexType::Lock lock(m_mutex);
             std::cout << m_formatter->format(logger, level, event);
         }
     }
 
     std::string StdoutLogAppender::toYamlString()
     {
+        MutexType::Lock lock(m_mutex);
         YAML::Node node;
         node["type"] = "StdoutLogAppender";
         if (m_level != LogLevel::UNKNOWN)
@@ -367,8 +373,10 @@ namespace tide
         reopen();
     }
 
+    // 13
     std::string FileLogAppender::toYamlString()
     {
+        MutexType::Lock lock(m_mutex);
         YAML::Node node;
         node["type"] = "FileLogAppender";
         node["file"] = m_fileName;
@@ -385,17 +393,32 @@ namespace tide
         return ss.str();
     }
 
-    //!!!!!!!!!!!!!!! m_level m_formatter
+    // 12
     void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event)
     {
         if (level >= m_level)
         {
-            m_filestream << m_formatter->format(logger, level, event);
+            uint64_t now = time(0);
+            if (now - m_lastTime >= 3)
+            {
+                reopen();
+                m_lastTime = now;
+            }
+            MutexType::Lock lock(m_mutex);
+            if (!(m_filestream << m_formatter->format(logger, level, event)))
+            {
+                std::cout << "error log to file " << m_fileName << std::endl;
+            }
+            //     if(!(m_formatter->format(m_filestream, logger, level, event))) {
+            //     std::cout << "error" << std::endl;
+            // }
         }
     }
 
+    // 14
     bool FileLogAppender::reopen()
     {
+        MutexType::Lock lock(m_mutex);
         if (m_filestream)
         {
             m_filestream.close();
@@ -418,16 +441,22 @@ namespace tide
             addAppender(LogAppender::ptr(new StdoutLogAppender));
         }
     }
+
+    // 7 8
     void Logger::addAppender(LogAppender::ptr appender)
     {
+        MutexType::Lock lock(m_mutex);
         if (!appender->getFormatter())
         {
+            MutexType::Lock l1(appender->m_mutex);
             appender->m_formatter = m_formatter;
         }
         m_appenders.push_back(appender);
     }
+    // 9
     void Logger::delAppender(LogAppender::ptr appender)
     {
+        MutexType::Lock lock(m_mutex);
         for (auto it = m_appenders.begin(); it != m_appenders.end(); ++it)
         {
             if (*it == appender)
@@ -438,13 +467,56 @@ namespace tide
         }
     }
 
+    // 10
     void Logger::clearAppenders()
     {
+        MutexType::Lock lock(m_mutex);
         m_appenders.clear();
     }
 
-    std::string Logger::toYamlString() const
+    void Logger::setLevel(LogLevel::Level val)
     {
+        m_level = val;
+    }
+
+    void Logger::setFormatter(const std::string &val)
+    {
+        tide::LogFormatter::ptr new_val(new tide::LogFormatter(val));
+        if (new_val->isError())
+        {
+            std::cout << "Logger setFormatter name=" << m_name << " value=" << val << " invalid formatter" << std::endl;
+            return;
+        }
+        setFormatter(new_val);
+    }
+
+    // 3 4
+    void Logger::setFormatter(LogFormatter::ptr val)
+    {
+        MutexType::Lock lock(m_mutex);
+        m_formatter = val;
+
+        for (auto &i : m_appenders)
+        {
+            MutexType::Lock l1(i->m_mutex);
+            if (!i->m_hasFormatter)
+            {
+                i->m_formatter = m_formatter;
+            }
+        }
+    }
+
+    // 6
+    LogFormatter::ptr Logger::getFormatter()
+    {
+        MutexType::Lock lock(m_mutex);
+        return m_formatter;
+    }
+
+    // 5
+    std::string Logger::toYamlString()
+    {
+        MutexType::Lock lock(m_mutex);
         YAML::Node node;
         node["name"] = m_name;
         if (m_level != LogLevel::UNKNOWN)
@@ -464,32 +536,14 @@ namespace tide
         return ss.str();
     }
 
-    void Logger::setFormatter(const std::string &val)
-    {
-        tide::LogFormatter::ptr new_val(new tide::LogFormatter(val));
-        if (new_val->isError())
-        {
-            std::cout << "Logger setFormatter name=" << m_name << " value=" << val << " invalid formatter" << std::endl;
-            return;
-        }
-        //m_formatter = new_val;
-        setFormatter(new_val);
-    }
-    void Logger::setFormatter(LogFormatter::ptr val)
-    {
-        m_formatter = val;
-        for(auto &i : m_appenders){
-            if(!i->m_hasFormatter){
-                i->m_formatter = m_formatter;
-            }
-        }
-    }
-
+    // 11
     void Logger::log(LogLevel::Level level, LogEvent::ptr event)
     {
         if (level >= m_level)
         {
             auto self = shared_from_this();
+
+            MutexType::Lock lock(m_mutex);
             if (!m_appenders.empty())
             {
                 for (auto &it : m_appenders)
@@ -497,12 +551,9 @@ namespace tide
                     it->log(self, level, event);
                 }
             }
-            else
+            else if (m_root)
             {
-                if (m_root)
-                {
-                    m_root->log(level, event);
-                }
+                m_root->log(level, event);
             }
         }
     }
@@ -538,30 +589,19 @@ namespace tide
     LoggerManager::LoggerManager()
     {
         m_root.reset(new Logger);
-        // m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
+        m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
         m_loggers[m_root->getName()] = m_root;
         init();
     }
 
     void LoggerManager::init()
     {
-        // m_root = getLogger("root");
     }
 
-    std::string LoggerManager::toYamlString()
-    {
-        YAML::Node node;
-        for (auto &i : m_loggers)
-        {
-            node.push_back(YAML::Load(i.second->toYamlString()));
-        }
-        std::stringstream ss;
-        ss << node;
-        return ss.str();
-    }
-
+    // 17
     Logger::ptr LoggerManager::getLogger(const std::string &name)
     {
+        MutexType::Lock lock(m_mutex);
         auto it = m_loggers.find(name);
         if (it != m_loggers.end())
         {
@@ -571,6 +611,24 @@ namespace tide
         logger->m_root = m_root;
         m_loggers[name] = logger;
         return logger;
+    }
+
+    Logger::ptr LoggerManager::getRoot() const
+    {
+        return m_root;
+    }
+
+    std::string LoggerManager::toYamlString()
+    {
+        MutexType::Lock lock(m_mutex);
+        YAML::Node node;
+        for (auto &i : m_loggers)
+        {
+            node.push_back(YAML::Load(i.second->toYamlString()));
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
     }
 
     struct LogAppenderDefine
@@ -668,7 +726,7 @@ namespace tide
                         ld.appenders.push_back(lad);
                     }
                 }
-                //std::cout << "load log config: " << ld.name << " " << ld.level << " " << ld.formatter << " appender size=" << ld.appenders.size() << std::endl;
+                // std::cout << "load log config: " << ld.name << " " << ld.level << " " << ld.formatter << " appender size=" << ld.appenders.size() << std::endl;
                 se.insert(ld);
             }
             return se;
@@ -731,58 +789,62 @@ namespace tide
     {
         LogIniter()
         {
-            g_log_defines->addListener(30000, [](const std::set<LogDefine> &old_value, const std::set<LogDefine> &new_value)
+            g_log_defines->addListener([](const std::set<LogDefine> &old_value,
+                                          const std::set<LogDefine> &new_value)
                                        {
-                TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "on_logger_conf_changed";
-                for(auto &i : new_value){
-                    auto it = old_value.find(i);
-                    tide::Logger::ptr logger;
-                    if(it == old_value.end()){
+            TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "on_logger_conf_changed";
+            for(auto& i : new_value) {
+                auto it = old_value.find(i);
+                tide::Logger::ptr logger;
+                if(it == old_value.end()) {
+                    //新增logger
+                    logger = TIDE_LOG_NAME(i.name);
+                } else {
+                    if(!(i == *it)) {
+                        //修改的logger
                         logger = TIDE_LOG_NAME(i.name);
-                    }else{
-                        // 修改Logger
-                        if(!(i == *it)){
-                            logger = TIDE_LOG_NAME(i.name);
-                        }
+                    } else {
+                        continue;
                     }
-
-                    logger->setLevel(i.level);
-                    if(!i.formatter.empty()){
-                        logger->setFormatter(i.formatter);
-                    }
-
-                    logger->clearAppenders();
-                    for(auto &a : i.appenders){
-                        tide::LogAppender::ptr appender;
-                        if(a.type == 1){
-                            appender.reset(new tide::FileLogAppender(a.file));
-                        }else if(a.type == 2){
-                            appender.reset(new tide::StdoutLogAppender());
-                        }
-                        appender->setLevel(a.level);
-                        if(!a.formatter.empty()){
-                            LogFormatter::ptr fmt(new LogFormatter(a.formatter));
-                            if(!fmt->isError()){
-                                appender->setFormatter(fmt);
-                            }else{
-                                std::cout << "log.name" << i.name << "appender type =" << a.type
-                                          << " formatter =" << a.formatter << "is invalid" << std::endl;
-                            }
-                        }
-                        logger->addAppender(appender);
-                    }
-
+                }
+                logger->setLevel(i.level);
+                //std::cout << "** " << i.name << " level=" << i.level
+                //<< "  " << logger << std::endl;
+                if(!i.formatter.empty()) {
+                    logger->setFormatter(i.formatter);
                 }
 
-                for(auto &i : old_value){
-                    auto it = new_value.find(i);
-                    if(it == new_value.end()){
-                        // 假删除Logger：设置到无法触发状态
-                        auto logger =  TIDE_LOG_NAME(i.name);
-                        logger->setLevel((LogLevel::Level)100);
-                        logger->clearAppenders();
+                logger->clearAppenders();
+                for(auto& a : i.appenders) {
+                    tide::LogAppender::ptr ap;
+                    if(a.type == 1) {
+                        ap.reset(new tide::FileLogAppender(a.file));
+                    } else if(a.type == 2) {
+                        ap.reset(new tide::StdoutLogAppender);
                     }
-                } });
+                    ap->setLevel(a.level);
+                    if(!a.formatter.empty()) {
+                        tide::LogFormatter::ptr fmt(new tide::LogFormatter(a.formatter));
+                        if(!fmt->isError()) {
+                            ap->setFormatter(fmt);
+                        } else {
+                            std::cout << "log.name=" << i.name << " appender type=" << a.type
+                                      << " formatter=" << a.formatter << " is invalid" << std::endl;
+                        }
+                    }
+                    logger->addAppender(ap);
+                }
+            }
+
+            for(auto& i : old_value) {
+                auto it = new_value.find(i);
+                if(it == new_value.end()) {
+                    //删除logger
+                    auto logger = TIDE_LOG_NAME(i.name);
+                    logger->setLevel((LogLevel::Level)0);
+                    logger->clearAppenders();
+                }
+            } });
         }
     };
 
