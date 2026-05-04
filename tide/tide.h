@@ -8,5 +8,7 @@
 #include "utils.h"
 #include "macro.h"
 #include "fiber.h"
+#include "scheduler.h"
+#include "singleton.h"
 
 #endif // __TIDE_H__

@@ -2,15 +2,16 @@
 #define __TIDE_FIBER_H__
 
 #include <memory>
+#include <functional>
 
 #include <ucontext.h>
 
-#include "tide.h"
-
 namespace tide
 {
+    class Scheduler;
     class Fiber : public std::enable_shared_from_this<Fiber>
     {
+    friend class Scheduler;
     public:
         using ptr = std::shared_ptr<Fiber>;
         enum State{
@@ -26,7 +27,7 @@ namespace tide
         Fiber();
 
     public:
-        Fiber(std::function<void()> cb, size_t stacksize = 0);
+        Fiber(std::function<void()> cb, size_t stacksize = 0, bool use_caller = false);
         ~Fiber();
 
         // 重置协程函数并重置状态
@@ -35,8 +36,10 @@ namespace tide
         void swapIn();
         // 切换到后台执行
         void swapOut();
-        
+        void call();
+        void back();
         uint64_t getId() const {return m_id;}
+        State getState() const { return m_state; }
 
     public:
         static void SetThis(Fiber* f);
@@ -49,6 +52,7 @@ namespace tide
         static uint64_t TotalFibers();
 
         static void MainFunc();
+        static void CallerMainFunc();
 
         static uint64_t GetFiberId();
 

@@ -21,9 +21,9 @@ namespace tide
     /**
      * LogEvent 日志事件
      */
-    LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char *file,
+    LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char *func, const char *file,
                        int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time, const std::string& threadName)
-        : m_file(file), m_line(line), m_elapse(elapse), m_threadId(threadId),
+        : m_func(func), m_file(file), m_line(line), m_elapse(elapse), m_threadId(threadId),
           m_fiberId(fiberId), m_time(time), m_threadName(threadName), m_level(level), m_logger(logger)
     {
     }
@@ -132,9 +132,6 @@ namespace tide
     /**
      * FormatItem 格式节点
      */
-
-
-
     /**
      * 格式节点继承器
      */
@@ -243,6 +240,18 @@ namespace tide
         std::string m_format;
     };
 
+    class FuncFormatItem : public LogFormatter::FormatItem
+    {
+    public:
+        FuncFormatItem(const std::string &str = "")
+        {
+        }
+        void format(std::ostream &os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override
+        {
+            os << event->getFunc();
+        }
+    };
+
     class FilenameFormatItem : public LogFormatter::FormatItem
     {
     public:
@@ -312,7 +321,6 @@ namespace tide
      * 日志输出地址
      */
 
-    // 1
     void LogAppender::setFormatter(LogFormatter::ptr val)
     {
         MutexType::Lock lock(m_mutex);
@@ -327,7 +335,6 @@ namespace tide
         }
     }
 
-    // 2
     LogFormatter::ptr LogAppender::getFormatter()
     {
         MutexType::Lock lock(m_mutex);
@@ -373,7 +380,6 @@ namespace tide
         reopen();
     }
 
-    // 13
     std::string FileLogAppender::toYamlString()
     {
         MutexType::Lock lock(m_mutex);
@@ -393,7 +399,6 @@ namespace tide
         return ss.str();
     }
 
-    // 12
     void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event)
     {
         if (level >= m_level)
@@ -409,13 +414,9 @@ namespace tide
             {
                 std::cout << "error log to file " << m_fileName << std::endl;
             }
-            //     if(!(m_formatter->format(m_filestream, logger, level, event))) {
-            //     std::cout << "error" << std::endl;
-            // }
         }
     }
 
-    // 14
     bool FileLogAppender::reopen()
     {
         MutexType::Lock lock(m_mutex);
@@ -434,11 +435,10 @@ namespace tide
     Logger::Logger(const std::string &name)
         : m_name(name), m_level(LogLevel::DEBUG)
     {
-        m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+        m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T%C%T[%p]%T[%c]%T%f:%l%T%m%n"));
 
     }
 
-    // 7 8
     void Logger::addAppender(LogAppender::ptr appender)
     {
         MutexType::Lock lock(m_mutex);
@@ -449,7 +449,6 @@ namespace tide
         }
         m_appenders.push_back(appender);
     }
-    // 9
     void Logger::delAppender(LogAppender::ptr appender)
     {
         MutexType::Lock lock(m_mutex);
@@ -463,7 +462,6 @@ namespace tide
         }
     }
 
-    // 10
     void Logger::clearAppenders()
     {
         MutexType::Lock lock(m_mutex);
@@ -486,7 +484,6 @@ namespace tide
         setFormatter(new_val);
     }
 
-    // 3 4
     void Logger::setFormatter(LogFormatter::ptr val)
     {
         MutexType::Lock lock(m_mutex);
@@ -502,14 +499,12 @@ namespace tide
         }
     }
 
-    // 6
     LogFormatter::ptr Logger::getFormatter()
     {
         MutexType::Lock lock(m_mutex);
         return m_formatter;
     }
 
-    // 5
     std::string Logger::toYamlString()
     {
         MutexType::Lock lock(m_mutex);
@@ -532,7 +527,6 @@ namespace tide
         return ss.str();
     }
 
-    // 11
     void Logger::log(LogLevel::Level level, LogEvent::ptr event)
     {
         if (level >= m_level)
@@ -594,7 +588,6 @@ namespace tide
     {
     }
 
-    // 17
     Logger::ptr LoggerManager::getLogger(const std::string &name)
     {
         MutexType::Lock lock(m_mutex);
@@ -722,7 +715,6 @@ namespace tide
                         ld.appenders.push_back(lad);
                     }
                 }
-                // std::cout << "load log config: " << ld.name << " " << ld.level << " " << ld.formatter << " appender size=" << ld.appenders.size() << std::endl;
                 se.insert(ld);
             }
             return se;
@@ -804,8 +796,6 @@ namespace tide
                     }
                 }
                 logger->setLevel(i.level);
-                //std::cout << "** " << i.name << " level=" << i.level
-                //<< "  " << logger << std::endl;
                 if(!i.formatter.empty()) {
                     logger->setFormatter(i.formatter);
                 }
@@ -953,7 +943,8 @@ namespace tide
             XX(l, LineFormatItem),
             XX(T, TabFormatItem),
             XX(F, FiberIdFormatItem),
-            XX(N, ThreadNameFormatItem)
+            XX(N, ThreadNameFormatItem),
+            XX(C, FuncFormatItem)
 #undef XX
         };
         for (auto &i : vec)
