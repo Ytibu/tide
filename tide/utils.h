@@ -15,7 +15,7 @@ namespace tide
 
     void Backtrace(std::vector<std::string>& bt, int size, int skip = 1);
 
-    std::string BacktraceToString(int size, int skip = 2, const std::string& prefix = "");
+    std::string BacktraceToString(int size = 1, int skip = 2, const std::string& prefix = "");
 
 } // namespace tide
 

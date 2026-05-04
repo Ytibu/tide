@@ -126,7 +126,6 @@ namespace tide
             try
             {
                 RWMutexType::ReadLock lock(m_mutex);
-                // return boost::lexical_cast<std::string>(m_value);
                 return ToStr()(m_value);
             }
             catch (const std::exception &e)
@@ -140,7 +139,6 @@ namespace tide
         {
             try
             {
-                // m_value = boost::lexical_cast<T>(str);
                 setValue(FromStr()(val));
                 return true;
             }

@@ -18,7 +18,7 @@
 #define TIDE_LOG_LEVEL(logger, level) \
     if (logger->getLevel() <= level) \
         tide::LogEventWrap(tide::LogEvent::ptr(new tide::LogEvent(logger, level, \
-            __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0), tide::Thread::GetName()))).getSS()
+            __func__, __FILE__, __LINE__,0, tide::GetThreadId(), tide::GetFiberId(), time(0), tide::Thread::GetName()))).getSS()
 
 #define TIDE_LOG_DEBUG(logger) TIDE_LOG_LEVEL(logger, tide::LogLevel::DEBUG)
 #define TIDE_LOG_INFO(logger)  TIDE_LOG_LEVEL(logger, tide::LogLevel::INFO)
@@ -30,7 +30,7 @@
 #define TIDE_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if (logger->getLevel() <= level) \
         tide::LogEventWrap(tide::LogEvent::ptr(new tide::LogEvent(logger, level, \
-            __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0), tide::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
+            __func__, __FILE__, __LINE__, 0, tide::GetThreadId(), tide::GetFiberId(), time(0), tide::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 #define TIDE_LOG_FMT_DEBUG(logger, fmt, ...) TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::DEBUG, fmt, __VA_ARGS__)
 #define TIDE_LOG_FMT_INFO(logger, fmt, ...)  TIDE_LOG_FMT_LEVEL(logger, tide::LogLevel::INFO, fmt, __VA_ARGS__)
@@ -83,9 +83,10 @@ namespace tide
     {
     public:
         using ptr = std::shared_ptr<LogEvent>;
-        LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char *file, int32_t line, uint32_t elapse,
+        LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* func, const char *file, int32_t line, uint32_t elapse,
                  uint32_t threadId, uint32_t fiberId, uint64_t time, const std::string& threadName);
 
+        const char *getFunc() const { return m_func; }
         const char *getFile() const { return m_file; }
         int32_t getLine() const { return m_line; }
         uint32_t getElapse() const { return m_elapse; }
@@ -103,6 +104,7 @@ namespace tide
         void format(const char *fmt, va_list al);
 
     private:
+        const char *m_func = nullptr; // 函数名
         const char *m_file = nullptr; // 文件名
         int32_t m_line = 0;           // 行号
         uint32_t m_elapse = 0;        // 程序启动到现在的时间

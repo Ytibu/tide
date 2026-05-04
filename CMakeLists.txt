@@ -15,6 +15,7 @@ set(LIB_SRC
     tide/config.cc
     tide/thread.cc
     tide/fiber.cc
+    tide/scheduler.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

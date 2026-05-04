@@ -290,7 +290,6 @@ namespace tide
         const std::string &getName() const { return m_name; }
 
         void join();
-        // static void* run(void* arg);
 
         static Thread *GetThis();
         static void SetName(const std::string &name);
