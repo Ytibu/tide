@@ -8,9 +8,9 @@ tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 void run_in_fiber()
 {
     TIDE_LOG_INFO(g_logger) << "run_in_fiber begin";
-    tide::Fiber::YiedToHold();
+    tide::Fiber::YieldToHold();
     TIDE_LOG_INFO(g_logger) << "run_in_fiber end";
-    tide::Fiber::YiedToHold();
+    tide::Fiber::YieldToHold();
 }
 
 void test_fiber()

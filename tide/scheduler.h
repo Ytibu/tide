@@ -30,7 +30,7 @@ namespace tide
         void start();
         void stop();
 
-        template<class FiberOrCb>
+        template <class FiberOrCb>
         void schedule(FiberOrCb cb, int thread = -1)
         {
             bool need_tickle = false;
@@ -44,35 +44,35 @@ namespace tide
             }
         }
 
-        template<class InputIterator>
+        template <class InputIterator>
         void schedule(InputIterator begin, InputIterator end)
         {
             bool need_tickle = false;
             {
                 MutexType::Lock lock(m_mutex);
-                while(begin != end) 
+                while (begin != end)
                 {
                     need_tickle = scheduleNoLock(&*begin, -1) || need_tickle;
                     ++begin;
                 }
             }
 
-            if(need_tickle)
+            if (need_tickle)
             {
                 tickle();
             }
         }
-    
-        protected:
+
+    protected:
         virtual void tickle();
         void run();
         virtual bool stopping();
         virtual void idle();
         void setThis();
-        bool hasIdleThreads() { return m_idleThreadCount > 0;}
+        bool hasIdleThreads() { return m_idleThreadCount > 0; }
 
     private:
-        template<class FiberOrCb>
+        template <class FiberOrCb>
         bool scheduleNoLock(FiberOrCb &&fc, int thread)
         {
             bool need_tickle = m_fibers.empty();
@@ -83,9 +83,10 @@ namespace tide
             }
             return need_tickle;
         }
-    
+
     private:
-        struct FiberAndThread{
+        struct FiberAndThread
+        {
             Fiber::ptr fiber;
             std::function<void()> cb;
             int thread;
@@ -93,18 +94,20 @@ namespace tide
             FiberAndThread(Fiber::ptr f, int t)
                 : fiber(f), thread(t) {}
 
-            FiberAndThread(Fiber::ptr* f, int t)
-                : thread(t) {
-                    fiber.swap(*f);
-                }
+            FiberAndThread(Fiber::ptr *f, int t)
+                : thread(t)
+            {
+                fiber.swap(*f);
+            }
 
             FiberAndThread(std::function<void()> f, int t)
                 : cb(f), thread(t) {}
 
             FiberAndThread(std::function<void()> *f, int t)
-                : thread(t) {
-                    cb.swap(*f);
-                }
+                : thread(t)
+            {
+                cb.swap(*f);
+            }
 
             FiberAndThread()
                 : thread(-1) {}
@@ -114,7 +117,7 @@ namespace tide
                 fiber = nullptr;
                 cb = nullptr;
                 thread = -1;
-            }     
+            }
         };
 
     private:
@@ -133,7 +136,6 @@ namespace tide
         bool m_autoStop = false;
         int m_rootThread = 0;
     };
-
 
 };
 #endif //__TIDE_SCHEDULER_H__

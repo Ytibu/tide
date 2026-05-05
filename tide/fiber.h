@@ -47,7 +47,7 @@ namespace tide
         // 协程切换到后台，设置为ready状态
         static void YiedToReady();
         // 协程切换到前台，设置为hold状态
-        static void YiedToHold();
+        static void YieldToHold();
         // 协程数量获取
         static uint64_t TotalFibers();
 

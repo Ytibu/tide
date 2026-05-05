@@ -33,7 +33,8 @@ void fun2()
 {
     while (1)
     {
-        TIDE_LOG_INFO(g_logger) << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+        TIDE_LOG_INFO(g_logger) << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$";
+        sleep(1);
     }
 }
 
@@ -41,15 +42,8 @@ void fun3()
 {
     while (1)
     {
-        TIDE_LOG_INFO(g_logger) << "￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥";
-        for (int i = 0; i < 1000; ++i)
-        {
-
-            if ((i % 1000) == 0)
-            {
-                usleep(1);
-            }
-        }
+        TIDE_LOG_INFO(g_logger) << "￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥";
+        sleep(1);
     }
 }
 
@@ -61,12 +55,12 @@ int main()
     tide::Config::LoadFromYaml(node);
 
     std::vector<tide::Thread::ptr> thrs;
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < 2; ++i)
     {
-        tide::Thread::ptr thr(new tide::Thread(&fun2, "name_" + std::to_string(i)));
-        // tide::Thread::ptr thr1(new tide::Thread(&fun3, "name_" + std::to_string(i)));
+        tide::Thread::ptr thr(new tide::Thread(&fun2, "name01_" + std::to_string(i)));
+        tide::Thread::ptr thr1(new tide::Thread(&fun3, "name02_" + std::to_string(i)));
         thrs.push_back(thr);
-        // thrs.push_back(thr1);
+        thrs.push_back(thr1);
     }
 
     for (size_t i = 0; i < thrs.size(); ++i)

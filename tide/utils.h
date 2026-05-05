@@ -17,6 +17,10 @@ namespace tide
 
     std::string BacktraceToString(int size = 1, int skip = 2, const std::string& prefix = "");
 
+    // 时间获取
+    uint64_t GetCurrentMS();
+    uint64_t GetCurrentUS();
+
 } // namespace tide
 
 #endif // __UTILS_H__

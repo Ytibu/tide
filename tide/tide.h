@@ -10,5 +10,7 @@
 #include "fiber.h"
 #include "scheduler.h"
 #include "singleton.h"
+#include "iomanager.h"
+#include "timer.h"
 
 #endif // __TIDE_H__

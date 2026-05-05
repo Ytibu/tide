@@ -71,7 +71,7 @@ namespace tide
         m_ctx.uc_stack.ss_sp = m_stack;
         m_ctx.uc_stack.ss_size = m_stacksize;
 
-        if (use_caller)
+        if (!use_caller)
         {
             makecontext(&m_ctx, &Fiber::MainFunc, 0);
         }
@@ -80,7 +80,7 @@ namespace tide
             makecontext(&m_ctx, &Fiber::CallerMainFunc, 0);
         }
 
-        TIDE_LOG_DEBUG(g_logger) << "Fiber::Fiber(std::function<void()> cb, size_t stacksize)";
+        TIDE_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
     }
 
     Fiber::~Fiber()
@@ -88,7 +88,7 @@ namespace tide
         --s_fiber_count;
         if (m_stack)
         {
-            TIDE_ASSERT(m_state == TERM || m_state == INIT || m_state == EXCEPT);
+            TIDE_ASSERT(m_state == TERM || m_state == EXCEPT || m_state == INIT);
 
             StackAllocator::Dealloc(m_stack, m_stacksize);
         }
@@ -103,16 +103,15 @@ namespace tide
                 SetThis(nullptr);
             }
         }
-
-        TIDE_LOG_DEBUG(g_logger) << "Fiber::~Fiber id = " << m_id;
+        TIDE_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id
+                                 << " total=" << s_fiber_count;
     }
 
     // 重置协程函数并重置状态
     void Fiber::reset(std::function<void()> cb)
     {
         TIDE_ASSERT(m_stack);
-        TIDE_ASSERT(m_state == TERM || m_state == INIT || m_state == EXCEPT);
-
+        TIDE_ASSERT(m_state == TERM || m_state == EXCEPT || m_state == INIT);
         m_cb = cb;
         if (getcontext(&m_ctx))
         {
@@ -124,7 +123,6 @@ namespace tide
         m_ctx.uc_stack.ss_size = m_stacksize;
 
         makecontext(&m_ctx, &Fiber::MainFunc, 0);
-
         m_state = INIT;
     }
     // 切换到当前协程执行
@@ -195,7 +193,7 @@ namespace tide
     }
 
     // 协程切换到前台，设置为hold状态
-    void Fiber::YiedToHold()
+    void Fiber::YieldToHold()
     {
         Fiber::ptr cur = GetThis();
         TIDE_ASSERT(cur->m_state == EXEC);
@@ -221,18 +219,22 @@ namespace tide
         catch (std::exception &ex)
         {
             cur->m_state = EXCEPT;
-            TIDE_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what();
+            TIDE_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what() << " fiber_id=" << cur->getId()
+                                     << std::endl
+                                     << tide::BacktraceToString();
         }
         catch (...)
         {
             cur->m_state = EXCEPT;
-            TIDE_LOG_ERROR(g_logger) << "Fiber Except";
+            TIDE_LOG_ERROR(g_logger) << "Fiber Except: " << " fiber_id=" << cur->getId()
+                                     << std::endl
+                                     << tide::BacktraceToString();
         }
 
         auto raw_ptr = cur.get();
         cur.reset();
         raw_ptr->swapOut();
-        TIDE_ASSERT2(false, "never reach");
+        TIDE_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->getId()));
     }
 
     void Fiber::CallerMainFunc()

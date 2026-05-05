@@ -7,6 +7,7 @@
 #include <sys/syscall.h>
 #include <stdint.h>
 #include <execinfo.h>
+#include <sys/time.h>
 
 #include "tide.h"
 
@@ -56,7 +57,19 @@ namespace tide
         return ss.str();
     }
 
+    uint64_t GetCurrentMS()
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        return tv.tv_sec * 1000ul + tv.tv_usec / 1000;
+    }
 
+    uint64_t GetCurrentUS()
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        return tv.tv_sec * 1000 * 1000ul + tv.tv_usec;
+    }
 
 
 } // namespace tide

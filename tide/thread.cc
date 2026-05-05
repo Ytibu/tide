@@ -5,10 +5,10 @@
 
 namespace tide
 {
+    static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
+
     static thread_local Thread *t_thread = nullptr;
     static thread_local std::string t_thread_name = "UNKNOWN";
-
-    static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
     Semaphore::Semaphore(uint32_t count)
     {
@@ -52,7 +52,8 @@ namespace tide
 
     void Thread::SetName(const std::string &name)
     {
-        if(name.empty()){
+        if (name.empty())
+        {
             return;
         }
         if (t_thread)
@@ -67,7 +68,7 @@ namespace tide
     }
 
     Thread::Thread(std::function<void()> cb, const std::string &name)
-    : m_cb(cb), m_name(name)
+        : m_cb(cb), m_name(name)
     {
         if (name.empty())
         {
@@ -117,8 +118,8 @@ namespace tide
         cb.swap(thread->m_cb);
 
         thread->m_semaphore.notify();
-        cb();
 
+        cb();
         return 0;
     }
 
