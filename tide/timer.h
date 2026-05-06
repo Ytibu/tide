@@ -27,8 +27,6 @@ namespace tide
         Timer(uint64_t ms, std::function<void()> cb, bool recurring, TimerManager *manager);
         Timer(uint64_t next);
 
-    
-
     private:
         bool m_recurring = false;          // 是否重复
         uint64_t m_ms = 0;                 // 定时器超时时间

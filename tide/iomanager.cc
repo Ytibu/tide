@@ -236,10 +236,11 @@ namespace tide
 
     void IOManager::tickle()
     {
-        if (!hasIdleThreads())
+        if (hasIdleThreads())
         {
             return;
         }
+
         int rt = write(m_tickleFds[1], "T", 1);
         TIDE_ASSERT(rt == 1);
     }
@@ -257,9 +258,7 @@ namespace tide
     }
     void IOManager::idle()
     {
-        TIDE_LOG_DEBUG(g_logger) << "idle";
-        const uint64_t MAX_EVNETS = 256;
-        epoll_event *events = new epoll_event[MAX_EVNETS]();
+        epoll_event *events = new epoll_event[64]();
         std::shared_ptr<epoll_event> shared_events(events, [](epoll_event *ptr)
                                                    { delete[] ptr; });
 
@@ -269,7 +268,7 @@ namespace tide
             if ((stopping(next_timeout)))
             {
                 TIDE_LOG_INFO(g_logger) << "name=" << getName()
-                                         << " idle stopping exit";
+                                        << " idle stopping exit";
                 break;
             }
 
@@ -287,7 +286,7 @@ namespace tide
                 {
                     next_timeout = MAX_TIMEOUT;
                 }
-                rt = epoll_wait(m_epfd, events, MAX_EVNETS, (int)next_timeout);
+                rt = epoll_wait(m_epfd, events, 64, (int)next_timeout);
                 if (rt < 0 && errno == EINTR)
                 {
                 }
@@ -301,22 +300,17 @@ namespace tide
             listExpiredCb(cbs);
             if (!cbs.empty())
             {
-                // TIDE_LOG_DEBUG(g_logger) << "on timer cbs.size=" << cbs.size();
                 schedule(cbs.begin(), cbs.end());
                 cbs.clear();
             }
-
-            // if(TIDE_UNLIKELY(rt == MAX_EVNETS)) {
-            //     TIDE_LOG_INFO(g_logger) << "epoll wait events=" << rt;
-            // }
 
             for (int i = 0; i < rt; ++i)
             {
                 epoll_event &event = events[i];
                 if (event.data.fd == m_tickleFds[0])
                 {
-                    uint8_t dummy[256];
-                    while (read(m_tickleFds[0], dummy, sizeof(dummy)) > 0)
+                    uint8_t dummy;
+                    while (read(m_tickleFds[0], &dummy, 1) == 1)
                         ;
                     continue;
                 }
@@ -325,7 +319,7 @@ namespace tide
                 FdContext::MutexType::Lock lock(fd_ctx->mutex);
                 if (event.events & (EPOLLERR | EPOLLHUP))
                 {
-                    event.events |= (EPOLLIN | EPOLLOUT) & fd_ctx->m_events;
+                    event.events |= (EPOLLIN | EPOLLOUT);
                 }
                 int real_events = NONE;
                 if (event.events & EPOLLIN)
@@ -350,13 +344,11 @@ namespace tide
                 if (rt2)
                 {
                     TIDE_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
-                                               << fd_ctx->fd << ", " << (EPOLL_EVENTS)event.events << "):"
-                                              << rt2 << " (" << errno << ") (" << strerror(errno) << ")";
+                                             << fd_ctx->fd << ", " << (EPOLL_EVENTS)event.events << "):"
+                                             << rt2 << " (" << errno << ") (" << strerror(errno) << ")";
                     continue;
                 }
 
-                // TIDE_LOG_INFO(g_logger) << " fd=" << fd_ctx->fd << " events=" << fd_ctx->events
-                //                          << " real_events=" << real_events;
                 if (real_events & READ)
                 {
                     fd_ctx->triggerEvent(READ);

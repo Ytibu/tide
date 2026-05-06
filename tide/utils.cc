@@ -32,7 +32,6 @@ namespace tide
         char** strings = ::backtrace_symbols(array, s);
         if(strings == NULL)
         {   
-            free(array);
             TIDE_LOG_ERROR(g_logger) << "backtrace_symbols error";
             return;
         }

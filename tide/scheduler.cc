@@ -83,7 +83,7 @@ namespace tide
     void Scheduler::stop()
     {
         m_autoStop = true;
-        if (m_threadCount == 0 && (m_rootFiber->getState() == Fiber::TERM || m_rootFiber->getState() == Fiber::INIT))
+        if (m_rootFiber && m_threadCount == 0 && (m_rootFiber->getState() == Fiber::TERM || m_rootFiber->getState() == Fiber::INIT))
         {
             TIDE_LOG_INFO(g_logger) << this << " stopped";
             m_stopping = true;
@@ -185,7 +185,6 @@ namespace tide
                     is_active = true;
                     break;
                 }
-                tickle_me |= it != m_fibers.end();
             }
 
             if (tickle_me)
@@ -195,7 +194,6 @@ namespace tide
 
             if (ft.fiber && (ft.fiber->getState() != Fiber::TERM && ft.fiber->getState() != Fiber::EXCEPT))
             {
-                //++m_activeThreadCount;
                 ft.fiber->swapIn();
                 --m_activeThreadCount;
 

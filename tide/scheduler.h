@@ -6,13 +6,13 @@
 #include <list>
 #include <map>
 #include <atomic>
+#include <string>
 
 #include "fiber.h"
 #include "thread.h"
 
 namespace tide
 {
-    class Fiber;
     class Scheduler
     {
     public:
@@ -63,6 +63,8 @@ namespace tide
             }
         }
 
+        // void switchTo(int thread = -1);
+        // std::ostream& dump(std::ostream& os);
     protected:
         virtual void tickle();
         void run();

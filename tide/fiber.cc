@@ -15,7 +15,7 @@ namespace tide
     static thread_local Fiber::ptr t_threadFiber = nullptr;
 
     static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
-        Config::Lookup<uint32_t>("fiber.stack.size", 1024 * 1024, "fiber stack size");
+        Config::Lookup<uint32_t>("fiber.stack.size", 128 * 1024, "fiber stack size");
 
     class MallocStackAllocator
     {
@@ -112,6 +112,7 @@ namespace tide
     {
         TIDE_ASSERT(m_stack);
         TIDE_ASSERT(m_state == TERM || m_state == EXCEPT || m_state == INIT);
+
         m_cb = cb;
         if (getcontext(&m_ctx))
         {
@@ -151,6 +152,7 @@ namespace tide
     {
         SetThis(this);
         m_state = EXEC;
+        TIDE_LOG_ERROR(g_logger) << getId();
         if (swapcontext(&t_threadFiber->m_ctx, &m_ctx))
         {
             TIDE_ASSERT2(false, "swapcontext");
@@ -197,6 +199,7 @@ namespace tide
     {
         Fiber::ptr cur = GetThis();
         TIDE_ASSERT(cur->m_state == EXEC);
+        cur->m_state = HOLD;
         cur->swapOut();
     }
 
