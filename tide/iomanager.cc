@@ -267,8 +267,6 @@ namespace tide
             uint64_t next_timeout = 0;
             if ((stopping(next_timeout)))
             {
-                TIDE_LOG_INFO(g_logger) << "name=" << getName()
-                                        << " idle stopping exit";
                 break;
             }
 

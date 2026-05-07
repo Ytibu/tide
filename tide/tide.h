@@ -12,5 +12,6 @@
 #include "singleton.h"
 #include "iomanager.h"
 #include "timer.h"
+#include "hook.h"
 
 #endif // __TIDE_H__

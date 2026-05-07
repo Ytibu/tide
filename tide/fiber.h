@@ -36,7 +36,9 @@ namespace tide
         void swapIn();
         // 切换到后台执行
         void swapOut();
+        // 协程切换到当前协程执行
         void call();
+        // 协程切换到后台执行
         void back();
         uint64_t getId() const {return m_id;}
         State getState() const { return m_state; }
@@ -57,14 +59,14 @@ namespace tide
         static uint64_t GetFiberId();
 
     private:
-        uint64_t m_id = 0;
-        uint32_t m_stacksize = 0;
-        State m_state = INIT;
+        uint64_t m_id = 0;  // 协程ID
+        uint32_t m_stacksize = 0;   // 协程栈大小
+        State m_state = INIT;   // 协程状态
 
-        ucontext_t m_ctx;
-        void* m_stack = nullptr;
+        ucontext_t m_ctx;   // 协程上下文
+        void* m_stack = nullptr;    // 协程栈指针
 
-        std::function<void()> m_cb;
+        std::function<void()> m_cb; // 协程执行函数
     };
 
 

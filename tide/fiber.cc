@@ -15,7 +15,7 @@ namespace tide
     static thread_local Fiber::ptr t_threadFiber = nullptr;
 
     static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
-        Config::Lookup<uint32_t>("fiber.stack.size", 128 * 1024, "fiber stack size");
+        Config::Lookup<uint32_t>("fiber.stack.size", 1224 * 1024, "fiber stack size");
 
     class MallocStackAllocator
     {
@@ -33,6 +33,7 @@ namespace tide
 
     using StackAllocator = MallocStackAllocator;
 
+    // 获取当前协程ID：如果线程存在返回Id，否则返回0
     uint64_t Fiber::GetFiberId()
     {
         if (t_fiber)
@@ -41,6 +42,8 @@ namespace tide
         }
         return 0;
     }
+
+    // 不对外开放，作为协程调度的基石：创建一个主协程对象，设置状态为EXEC，并将当前线程的协程指针指向该对象。
     Fiber::Fiber()
     {
         m_state = EXEC;
@@ -56,6 +59,7 @@ namespace tide
         TIDE_LOG_DEBUG(g_logger) << "Fiber::Fiber";
     }
 
+    // 构造函数：创建一个新的协程对象，分配栈空间，并设置上下文。
     Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
         : m_id(++s_fiber_id), m_cb(cb)
     {
@@ -103,8 +107,7 @@ namespace tide
                 SetThis(nullptr);
             }
         }
-        TIDE_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id
-                                 << " total=" << s_fiber_count;
+        TIDE_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id << " total=" << s_fiber_count;
     }
 
     // 重置协程函数并重置状态
@@ -152,7 +155,6 @@ namespace tide
     {
         SetThis(this);
         m_state = EXEC;
-        TIDE_LOG_ERROR(g_logger) << getId();
         if (swapcontext(&t_threadFiber->m_ctx, &m_ctx))
         {
             TIDE_ASSERT2(false, "swapcontext");

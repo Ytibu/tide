@@ -87,5 +87,40 @@ cmake version 3.31.6
 
 ### 分布协议
 
+### 模块汇总
+日志及日志管理系统
+```
+LogLevel        --> 定义日志级别：等级与字符串间的互相转化
+LogEvent        --> 表示一条日志事件：保存日志发生上下文信息、保存日志正文内容，提供格式化写入日志
+LogEventWarp    --> 日志事件包装器，RAII自动提交日志：构造时持有LogEvent，析构时交由Logger
+LogFormatter    --> 将LogEvent按照指定格式模板转化成最终字符串
+LogAppender     --> 日志输出目的地管理
+   |   |
+   | FileLogAppender --> 文件输出
+StdoutLogAppender    --> 终端输出
+
+LogFormatter --> 日志每一个子内容，例如(文件名、函数名)
+LoggerManager --> 管理日志的变更与
+```
+
+配置及配置管理系统
+```
+ConfigVarBase     -->   所有配置项的基类，保存配置名和描述
+LexicalCast<F, T> -->   通用类型转换模板
+ConfigVar<T, FromStr, ToStr>  -->   配置变量类
+Config            -->   配置中心/注册表：统一管理所有配置项，从yaml文件中解析配置并生成配置变量
+概括：Config统一注册和管理配置项、用ConfigVar<T>保存具体值，用LexicalCast负责类型转换，用YAM作为配置来源
+三层设计：
+   - 配置来源层：YAML文件
+   - 配置管理层：Config、ConfigVarBase、ConfigVar<T>
+   - 类型转换层：LexicalCast
+```
+
+线程管理系统
+```
+用Thread作为线程管理
+用各种Mutex作为资源管理
+```
+
 ### 推荐系统
 

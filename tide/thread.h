@@ -10,8 +10,6 @@
 #include <atomic>
 #include <string>
 
-//pthread_xxx
-//std::thread, pthread
 namespace tide {
 
 class Semaphore {
