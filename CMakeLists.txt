@@ -19,6 +19,7 @@ set(LIB_SRC
     tide/iomanager.cc
     tide/timer.cc
     tide/hook.cc
+    tide/fd_manager.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

@@ -101,7 +101,7 @@ namespace tide
     }
 
     // 通过fd获取FdCtx：如果不存在，并且auto_create=true，则创建一个新的FdCtx
-    FdCtx::ptr FdManager::get(int fd, bool auto_create = false)
+    FdCtx::ptr FdManager::get(int fd, bool auto_create)
     {
         RWMutexType::ReadLock lock(m_mutex);
         if ((int)m_datas.size() <= fd)

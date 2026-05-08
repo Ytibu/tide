@@ -10,19 +10,18 @@
 #include <atomic>
 #include <string>
 
+#include "noncopyable.h"
+
 namespace tide {
 
-class Semaphore {
+class Semaphore : noncopyable{
 public:
     Semaphore(uint32_t count = 0);
     ~Semaphore();
 
     void wait();
     void notify();
-private:
-    Semaphore(const Semaphore&) = delete;
-    Semaphore(const Semaphore&&) = delete;
-    Semaphore& operator=(const Semaphore&) = delete;
+
 private:
     sem_t m_semaphore;
 };
@@ -120,7 +119,7 @@ private:
     bool m_locked;
 };
 
-class Mutex {
+class Mutex : noncopyable{
 public:
     typedef ScopedLockImpl<Mutex> Lock;
     Mutex() {
@@ -142,7 +141,7 @@ private:
     pthread_mutex_t m_mutex;
 };
 
-class NullMutex {
+class NullMutex : noncopyable{
 public:
     typedef ScopedLockImpl<NullMutex> Lock;
     NullMutex() {}
@@ -151,7 +150,7 @@ public:
     void unlock() {}
 };
 
-class RWMutex {
+class RWMutex : noncopyable {
 public:
     typedef ReadScopedLockImpl<RWMutex> ReadLock;
     typedef WriteScopedLockImpl<RWMutex> WriteLock;
@@ -179,7 +178,7 @@ private:
     pthread_rwlock_t m_lock;
 };
 
-class NullRWMutex {
+class NullRWMutex : noncopyable {
 public:
     typedef ReadScopedLockImpl<NullMutex> ReadLock;
     typedef WriteScopedLockImpl<NullMutex> WriteLock;
@@ -234,7 +233,7 @@ private:
     volatile std::atomic_flag m_mutex;
 };
 
-class Thread {
+class Thread{
 public:
     typedef std::shared_ptr<Thread> ptr;
     Thread(std::function<void()> cb, const std::string& name);
