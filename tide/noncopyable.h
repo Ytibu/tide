@@ -1,5 +1,5 @@
-#ifndef __TIDE_NONCOPYABLE_H__
-#define __TIDE_NONCOPYABLE_H__
+#ifndef TIDE_NONCOPYABLE_H__
+#define TIDE_NONCOPYABLE_H__
 namespace tide
 {
     class noncopyable
@@ -15,4 +15,4 @@ namespace tide
     };
 }
 
-#endif // __TIDE_NONCOPYABLE_H__
+#endif // TIDE_NONCOPYABLE_H__

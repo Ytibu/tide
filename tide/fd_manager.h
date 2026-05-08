@@ -1,5 +1,5 @@
-#ifndef __TIDE_FD_MANAGER_H__
-#define __TIDE_FD_MANAGER_H__
+#ifndef TIDE_FD_MANAGER_H__
+#define TIDE_FD_MANAGER_H__
 
 #include <vector>
 #include <memory>
@@ -35,7 +35,6 @@ namespace tide
         uint64_t getTimeout(int type);
 
     private:
-        std::vector<bool> m_datas;
         bool m_isInit: 1;
         bool m_isSocket: 1;
         bool m_isClosed: 1;
@@ -66,4 +65,4 @@ namespace tide
     using FdMgr = Singleton<FdManager>;
 }
 
-#endif  // __TIDE_FD_MANAGER_H__
+#endif  // TIDE_FD_MANAGER_H__

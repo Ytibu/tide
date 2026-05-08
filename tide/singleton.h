@@ -1,5 +1,5 @@
-#ifndef __SINGLETON_H__
-#define __SINGLETON_H__
+#ifndef TIDE_SINGLETON_H__
+#define TIDE_SINGLETON_H__
 
 namespace tide
 {

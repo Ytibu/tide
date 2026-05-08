@@ -1,5 +1,5 @@
-#ifndef __TIDE_LOG_H__
-#define __TIDE_LOG_H__
+#ifndef TIDE_LOG_H__
+#define TIDE_LOG_H__
 
 #include <list>
 #include <vector>
@@ -286,4 +286,4 @@ namespace tide
     using LoggerMgr = tide::SingletonPtr<LoggerManager>;
 
 } // namespace tide
-#endif // __TIDE_LOG_H__
+#endif // TIDE_LOG_H__

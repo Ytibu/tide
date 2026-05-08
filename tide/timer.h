@@ -1,5 +1,5 @@
-#ifndef __TIDE_TIMER_H__
-#define __TIDE_TIMER_H__
+#ifndef TIDE_TIMER_H__
+#define TIDE_TIMER_H__
 
 #include <memory>
 #include <functional>
@@ -73,4 +73,4 @@ namespace tide
 
 };
 
-#endif //__TIDE_TIMER_H__
+#endif //TIDE_TIMER_H__

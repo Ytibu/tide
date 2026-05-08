@@ -1,5 +1,5 @@
-#ifndef __TIDE_IOMANAGER_H__
-#define __TIDE_IOMANAGER_H__
+#ifndef TIDE_IOMANAGER_H__
+#define TIDE_IOMANAGER_H__
 
 #include "scheduler.h"
 #include "thread.h"
@@ -78,4 +78,4 @@ private:
 };
 
 
-#endif  // __TIDE_IOMANAGER_H__
+#endif  // TIDE_IOMANAGER_H__

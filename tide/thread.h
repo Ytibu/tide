@@ -1,5 +1,5 @@
-#ifndef __TIDE_THREAD_H__
-#define __TIDE_THREAD_H__
+#ifndef TIDE_THREAD_H__
+#define TIDE_THREAD_H__
 
 #include <thread>
 #include <functional>

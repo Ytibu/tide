@@ -1,5 +1,5 @@
-#ifndef __TIDE_HOOK_H__
-#define __TIDE_HOOK_H__
+#ifndef TIDE_HOOK_H__
+#define TIDE_HOOK_H__
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -99,4 +99,4 @@ extern "C"{
 
 
 
-#endif // __TIDE_HOOK_H__
+#endif // TIDE_HOOK_H__

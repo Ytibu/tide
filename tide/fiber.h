@@ -1,5 +1,5 @@
-#ifndef __TIDE_FIBER_H__
-#define __TIDE_FIBER_H__
+#ifndef TIDE_FIBER_H__
+#define TIDE_FIBER_H__
 
 #include <memory>
 #include <functional>
@@ -72,4 +72,4 @@ namespace tide
 
 }
 
-#endif // __TIDE_FIBER_H__
+#endif // TIDE_FIBER_H__

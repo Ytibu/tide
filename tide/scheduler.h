@@ -1,5 +1,5 @@
-#ifndef __TIDE_SCHEDULER_H__
-#define __TIDE_SCHEDULER_H__
+#ifndef TIDE_SCHEDULER_H__
+#define TIDE_SCHEDULER_H__
 
 #include <memory>
 #include <vector>
@@ -140,4 +140,4 @@ namespace tide
     };
 
 };
-#endif //__TIDE_SCHEDULER_H__
+#endif //TIDE_SCHEDULER_H__

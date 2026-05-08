@@ -1,5 +1,5 @@
-#ifndef __TIDE_H__
-#define __TIDER_H__
+#ifndef TIDE_H__
+#define TIDE_H__
 
 #include "log.h"
 #include "config.h"
@@ -13,5 +13,8 @@
 #include "iomanager.h"
 #include "timer.h"
 #include "hook.h"
+#include "fd_manager.h"
+#include "endian.h"
+#include "address.h"
 
-#endif // __TIDE_H__
+#endif // TIDE_H__

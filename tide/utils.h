@@ -1,5 +1,5 @@
-#ifndef __UTILS_H__
-#define __UTILS_H__
+#ifndef TIDE_UTILS_H__
+#define TIDE_UTILS_H__
 
 #include <vector>
 #include <string>

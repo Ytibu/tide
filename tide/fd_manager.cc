@@ -22,6 +22,8 @@ namespace tide
         }
     }
 
+
+    // 通过一系列判断自动更正所有初始化的数据成员
     bool FdCtx::init()
     {
         if (m_isInit)
@@ -60,8 +62,10 @@ namespace tide
         return m_isInit;
     }
 
+    // 关闭文件描述符，并且更新状态
     bool FdCtx::close()
     {
+        // 标志位：如果没有初始化，或者已经关闭了，就直接返回
         if (!m_isInit || m_isClosed)
         {
             return false;
@@ -69,8 +73,10 @@ namespace tide
 
         ::close(m_fd);
         m_isClosed = true;
-        return true;
+        return m_isClosed;
     }
+
+    // 根据类型设置对应的超时时间
     void FdCtx::setTimeout(int type, uint64_t v)
     {
         if(type == SO_RCVTIMEO)
@@ -95,6 +101,7 @@ namespace tide
         return -1;
     }
 
+    // 智能指针初始化空指针
     FdManager::FdManager()
     {
         m_datas.resize(64);
@@ -103,6 +110,7 @@ namespace tide
     // 通过fd获取FdCtx：如果不存在，并且auto_create=true，则创建一个新的FdCtx
     FdCtx::ptr FdManager::get(int fd, bool auto_create)
     {
+        // 根据大小判断是否越界，根据是否创建进行返回
         RWMutexType::ReadLock lock(m_mutex);
         if ((int)m_datas.size() <= fd)
         {
@@ -118,6 +126,7 @@ namespace tide
         }
         lock.unlock();
 
+        // 创建新的FdCtx，并且更新到m_datas中
         RWMutexType::WriteLock lock2(m_mutex);
         FdCtx::ptr ctx(new FdCtx(fd));
         if (fd >= (int)m_datas.size())
