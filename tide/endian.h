@@ -8,6 +8,9 @@
 
 namespace tide
 {
+#define TIDE_LITTLE_ENDIAN 1
+#define TIDE_BIG_ENDIAN 2
+
     template<class T>
     typename std::enable_if<sizeof(T) == sizeof(uint64_t), T>::type
     byteswap(T value)
