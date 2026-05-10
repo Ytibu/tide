@@ -40,13 +40,13 @@ namespace tide
     template<class T>
     T byteswapOnLittleEndian(T value)
     {
-        return value;
+        return byteswap(value);
     }
 
     template<class T>
     T byteswapOnBigEndian(T value)
     {
-        return byteswap(value);
+        return value;
     }
 
 #else
@@ -54,13 +54,13 @@ namespace tide
     template<class T>
     T byteswapOnLittleEndian(T value)
     {
-        return byteswap(value);
+        return value;
     }
 
     template<class T>
     T byteswapOnBigEndian(T value)
     {
-        return value;
+        return byteswap(value);
     }
 #endif
 

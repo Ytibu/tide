@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <time.h>
+#include <stdint.h>
 
 namespace tide{
 
@@ -30,6 +31,7 @@ extern "C"{
     // connect
     typedef int (*connect_fun)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
     extern connect_fun connect_f;
+    extern int connect_timeout(int sockfd, const struct sockaddr *addr, socklen_t addrlen, uint64_t timeout_ms);
 
     // accept
     typedef int (*accept_fun)(int sockfd, struct sockaddr *addr, socklen_t *addrlen);

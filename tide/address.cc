@@ -1,25 +1,38 @@
 #include "address.h"
 
 #include <sstream>
+#include <memory>
 
 #include <string.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <ifaddrs.h>
 
 #include "endian.h"
 #include "log.h"
 
 namespace tide
 {
-    static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
+    static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
-    template<class T>
+    template <class T>
     static T createMask(uint32_t bits)
     {
         return (1 << (sizeof(T) * 8 - bits)) - 1;
     }
 
-    Address::ptr Address::Create(const sockaddr* addr, socklen_t addrlen)
+    template<class T>
+    static uint32_t countBytes(T value)
+    {
+        uint32_t result = 0;
+        for(; value; ++result)
+        {
+            value &= value - 1;
+        }
+        return result;
+    }
+
+    Address::ptr Address::Create(const sockaddr *addr, socklen_t addrlen)
     {
         if (addr == nullptr)
         {
@@ -29,24 +42,24 @@ namespace tide
         Address::ptr result;
         switch (addr->sa_family)
         {
-            case AF_INET:
-                result.reset(new IPv4Address(*(const sockaddr_in *)addr));
-                break;
-            case AF_INET6:
-                result.reset(new IPv6Address(*(const sockaddr_in6 *)addr));
-                break;
-            default:
-                result.reset(new UnknownAddress(addr->sa_family));
-                break;
+        case AF_INET:
+            result.reset(new IPv4Address(*(const sockaddr_in *)addr));
+            break;
+        case AF_INET6:
+            result.reset(new IPv6Address(*(const sockaddr_in6 *)addr));
+            break;
+        default:
+            result.reset(new UnknownAddress(addr->sa_family));
+            break;
         }
         return result;
     }
 
-    bool Address::Lookup(std::vector<Address::ptr> &result, const std::string &host, int family = AF_UNSPEC, int type = 0, int protocol)
+    bool Address::Lookup(std::vector<Address::ptr> &result, const std::string &host, int family, int type, int protocol)
     {
         addrinfo hints, *results, *next;
         memset(&hints, 0, sizeof(addrinfo));
-        hints.ai_flags = AI_NUMERICSERV;
+        hints.ai_flags = 0;
         hints.ai_family = family;
         hints.ai_socktype = type;
         hints.ai_protocol = protocol;
@@ -56,22 +69,27 @@ namespace tide
         hints.ai_next = nullptr;
 
         std::string node;
-        const char* service = nullptr;
+        const char *service = nullptr;
 
-        if(!host.empty() && host[0] == "["){
-            const char* endipv6 = (const char*)memchr(host.c_str() + 1, "]", host.size() - 1);
-            if(endipv6){
-                if(*(endipv6 + 1) == ":"){
+        if (!host.empty() && host[0] == '[')
+        {
+            const char *endipv6 = (const char *)memchr(host.c_str() + 1, ']', host.size() - 1);
+            if (endipv6)
+            {
+                if (*(endipv6 + 1) == ':')
+                {
                     service = endipv6 + 2;
                 }
                 node = host.substr(1, endipv6 - host.c_str() - 1);
             }
         }
 
-        if(node.empty()){
-            service = (const char *)memchr(host.c_str(), ":", host.size());
-            if(service){
-                if(!memchr(service + 1, ":", host.c_str() + host.size() - service -1))
+        if (node.empty())
+        {
+            service = (const char *)memchr(host.c_str(), ':', host.size());
+            if (service)
+            {
+                if (!memchr(service + 1, ':', (size_t)(host.c_str() + host.size() - (service + 1))))
                 {
                     node = host.substr(0, service - host.c_str());
                     ++service;
@@ -79,7 +97,7 @@ namespace tide
             }
         }
 
-        if(node.empty())
+        if (node.empty())
         {
             node = host;
         }
@@ -97,6 +115,117 @@ namespace tide
             next = next->ai_next;
         }
         freeaddrinfo(results);
+        return !result.empty();
+    }
+
+    Address::ptr Address::LookupAny(const std::string &host, int family, int type, int protocol)
+    {
+        std::vector<Address::ptr> result;
+        if (Lookup(result, host, family, type, protocol))
+        {
+            return result[0];
+        }
+        return nullptr;
+    }
+    std::shared_ptr<IPAddress> Address::LookupAnyIPAddress(const std::string &host, int family, int type, int protocol)
+    {
+        std::vector<Address::ptr> result;
+        if (Lookup(result, host, family, type, protocol))
+        {
+            for (auto &i : result)
+            {
+                IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);
+                if (v)
+                {
+                    return v;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    bool Address::GetInterfaceAddresses(std::multimap<std::string, std::pair<Address::ptr, uint32_t>> &result, int family)
+    {
+        struct ifaddrs *next, *results;
+        if (getifaddrs(&results) != 0)
+        {
+            TIDE_LOG_ERROR(g_logger) << "Address::GetInterfaceAddresses getifaddrs error";
+            return false;
+        }
+
+        try
+        {
+            for (next = results; next; next = next->ifa_next)
+            {
+                Address::ptr addr;
+                uint32_t prefix_len = ~0u;
+                if (family != AF_UNSPEC && next->ifa_addr->sa_family != family)
+                {
+                    continue;
+                }
+                switch (next->ifa_addr->sa_family)
+                {
+                    case AF_INET:
+                    {
+                        addr = Create(next->ifa_addr, sizeof(sockaddr_in));
+                        uint32_t netmask = ((sockaddr_in *)next->ifa_netmask)->sin_addr.s_addr;
+                        prefix_len = countBytes(netmask);
+                    }break;
+                case AF_INET6:
+                    {
+                        addr = Create(next->ifa_addr, sizeof(sockaddr_in6));
+                        in6_addr &netmask = ((sockaddr_in6 *)next->ifa_netmask)->sin6_addr;
+                        prefix_len = 0;
+                        for (int i = 0; i < 16; ++i)
+                        {
+                            prefix_len += countBytes(netmask.s6_addr[i]);
+                        }
+                    }break;
+                default:
+                    break;
+                }
+
+                if(addr)
+                {
+                    result.insert(std::make_pair(next->ifa_name, std::make_pair(addr, prefix_len)));
+                }
+            }
+        }
+        catch (...)
+        {
+            TIDE_LOG_INFO(g_logger) << "Address::GetInterfaceAddresses exception";
+            freeifaddrs(results);
+            return false;
+        }
+        freeifaddrs(results);
+        return !result.empty();
+    }
+    bool Address::GetInterfaceAddresses(std::vector<std::pair<Address::ptr, uint32_t>> &result, const std::string &iface, int family)
+    {
+        if(iface.empty() || iface == "*")
+        {
+            if(family == AF_INET || family == AF_UNSPEC)
+            {
+                result.push_back(std::make_pair(Address::ptr(new IPv4Address()), 0u));
+            }
+            else
+            {
+                result.push_back(std::make_pair(Address::ptr(new IPv6Address()), 0u));
+            }
+            return true;
+        }
+
+        std::multimap<std::string, std::pair<Address::ptr, uint32_t>> results;
+        if(!GetInterfaceAddresses(results, family))
+        {
+            return false;
+        }
+
+        auto its = results.equal_range(iface);
+        for(; its.first != its.second; ++its.first)
+        {
+            result.push_back(its.first->second);
+        }
         return !result.empty();
     }
 
@@ -141,41 +270,43 @@ namespace tide
         return !(*this == rhs);
     }
 
-
     /////////////////////////////////////
     // IP
-    IPAddress::ptr IPAddress::Create(const char *address, uint32_t port)
+    IPAddress::ptr IPAddress::Create(const char *address, uint16_t port)
     {
         addrinfo hints, *results;
         memset(&hints, 0, sizeof(addrinfo));
-        hints.ai_flags = AI_NUMERICSERV;
+        //hints.ai_flags = AI_NUMERICHOST;
         hints.ai_family = AF_UNSPEC;
 
-        int rv = getaddrinfo(address, std::to_string(port).c_str(), &hints, &results);
-        if (rv)
+        int error = getaddrinfo(address, NULL, &hints, &results);
+        if (error)
         {
             TIDE_LOG_INFO(g_logger) << "getaddrinfo failed for " << address << ":" << port;
             return nullptr;
         }
 
-        try{
+        try
+        {
             IPAddress::ptr result = std::dynamic_pointer_cast<IPAddress>(Address::Create(results->ai_addr, (socklen_t)results->ai_addrlen));
-            if(result){
+            if (result)
+            {
                 result->setPort(port);
             }
             freeaddrinfo(results);
             return result;
-        }catch(...){
+        }
+        catch (...)
+        {
             freeaddrinfo(results);
             return nullptr;
         }
     }
 
-
     ////////////////////////////////////////////////////////
     // IPv4
 
-    IPv4Address::ptr IPv4Address::Create(const char *address, uint32_t port)
+    IPv4Address::ptr IPv4Address::Create(const char *address, uint16_t port)
     {
         sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
@@ -193,7 +324,7 @@ namespace tide
     {
         m_addr = address;
     }
-    IPv4Address::IPv4Address(uint32_t address, uint32_t port)
+    IPv4Address::IPv4Address(uint32_t address, uint16_t port)
     {
         memset(&m_addr, 0, sizeof(m_addr));
         m_addr.sin_family = AF_INET;
@@ -202,6 +333,11 @@ namespace tide
     }
 
     const sockaddr *IPv4Address::getAddr() const
+    {
+        return (sockaddr *)&m_addr;
+    }
+    
+    sockaddr *IPv4Address::getAddr()
     {
         return (sockaddr *)&m_addr;
     }
@@ -256,14 +392,14 @@ namespace tide
         m_addr.sin_port = byteswapOnLittleEndian(v);
     }
 
-    uint32_t IPv4Address::getPort() const
+    uint16_t IPv4Address::getPort() const
     {
         return byteswapOnLittleEndian(m_addr.sin_port);
     }
 
     ////////////////////////////////////////////////////////
     // IPv6
-    IPv6Address::ptr IPv6Address::Create(const char *address, uint32_t port)
+    IPv6Address::ptr IPv6Address::Create(const char *address, uint16_t port)
     {
         sockaddr_in6 addr;
         memset(&addr, 0, sizeof(addr));
@@ -285,7 +421,7 @@ namespace tide
     {
         m_addr = address;
     }
-    IPv6Address::IPv6Address(const uint8_t address[16], uint32_t port)
+    IPv6Address::IPv6Address(const uint8_t address[16], uint16_t port)
     {
         memset(&m_addr, 0, sizeof(m_addr));
         m_addr.sin6_family = AF_INET6;
@@ -294,6 +430,10 @@ namespace tide
     }
 
     const sockaddr *IPv6Address::getAddr() const
+    {
+        return (sockaddr *)&m_addr;
+    }
+    sockaddr *IPv6Address::getAddr()
     {
         return (sockaddr *)&m_addr;
     }
@@ -366,7 +506,7 @@ namespace tide
     {
         m_addr.sin6_port = byteswapOnLittleEndian(v);
     }
-    uint32_t IPv6Address::getPort() const
+    uint16_t IPv6Address::getPort() const
     {
         return byteswapOnLittleEndian(m_addr.sin6_port);
     }
@@ -403,7 +543,15 @@ namespace tide
         m_length += offsetof(sockaddr_un, sun_path);
     }
 
+    void UnixAddress::setAddrLen(uint32_t v)
+    {
+        m_length = v;
+    }
     const sockaddr *UnixAddress::getAddr() const
+    {
+        return (sockaddr *)&m_addr;
+    }
+    sockaddr *UnixAddress::getAddr()
     {
         return (sockaddr *)&m_addr;
     }
@@ -430,6 +578,10 @@ namespace tide
         m_addr.sa_family = family;
     }
     const sockaddr *UnknownAddress::getAddr() const
+    {
+        return &m_addr;
+    }
+    sockaddr *UnknownAddress::getAddr()
     {
         return &m_addr;
     }

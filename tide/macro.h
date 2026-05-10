@@ -6,9 +6,17 @@
 #include "tide.h"
 
 namespace tide{
-    
+
+#if defined __GNUC__ || defined __llvm__
+#   define TIDE_LIKELY(x)      __builtin_expect(!!(x), 1)
+#   define TIDE_UNLIKELY(x)     __builtin_expect(!!(x), 0)
+#else
+#   define TIDE_LIKELY(x)       (x)
+#   define TIDE_UNLIKELY(x)         (x)
+#endif
+
 #define TIDE_ASSERT(x) \
-    if(!(x)){ \
+    if(TIDE_UNLIKELY(!(x))){ \
         TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ASSERTION: " #x \
             << "\nbacktrace:\n" \
             << tide::BacktraceToString(100, 2, " "); \
@@ -16,7 +24,7 @@ namespace tide{
     }
 
 #define TIDE_ASSERT2(x, w) \
-    if(!(x)){ \
+    if(TIDE_UNLIKELY(!(x))){ \
         TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ASSERTION: " #x \
             << "\n" << w \
             << "\nbacktrace:\n" \

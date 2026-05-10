@@ -16,5 +16,6 @@
 #include "fd_manager.h"
 #include "endian.h"
 #include "address.h"
+#include "socket.h"
 
 #endif // TIDE_H__

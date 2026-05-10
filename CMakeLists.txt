@@ -21,6 +21,7 @@ set(LIB_SRC
     tide/hook.cc
     tide/fd_manager.cc
     tide/address.cc
+    tide/socket.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})
