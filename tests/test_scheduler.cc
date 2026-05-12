@@ -2,8 +2,10 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
+#include <unistd.h>
 
-#include "../tide/tide.h"
+#include "../tide/log.h"
+#include "../tide/scheduler.h"
 
 static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 

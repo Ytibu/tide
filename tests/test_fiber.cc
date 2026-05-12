@@ -1,4 +1,5 @@
-#include "../tide/tide.h"
+#include "../tide/log.h"
+#include "../tide/fiber.h"
 
 tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
