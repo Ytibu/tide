@@ -478,12 +478,16 @@ namespace tide
     // 位置相关
     void ByteArray::setPosition(size_t pos)
     {
-        if (pos > m_size)
+        if (pos > m_capacity)
         {
             throw std::out_of_range("position out of range");
         }
 
         m_position = pos;
+        if(m_position > m_size)
+        {
+            m_size = m_position;
+        }
         m_cur = m_root;
         while (pos > m_cur->m_size)
         {

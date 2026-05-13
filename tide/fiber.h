@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <ucontext.h>
+#include <stdint.h>
 
 namespace tide
 {

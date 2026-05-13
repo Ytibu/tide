@@ -27,6 +27,10 @@ namespace  tide
 
             uint64_t getContentLength();
 
+        public:
+            static uint64_t GetHttpRequestBufferSize();
+            static uint64_t GetHttpResponseBufferSize();
+
         private:
             http_parser m_parser;
             HttpRequest::ptr m_request;

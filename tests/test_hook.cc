@@ -1,4 +1,5 @@
-#include "../tide/tide.h"
+#include "../tide/log.h"
+#include "../tide/iomanager.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h>

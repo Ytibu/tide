@@ -562,7 +562,7 @@ namespace tide
 
     std::ostream &UnixAddress::insert(std::ostream &os) const
     {
-        if (m_length > offsetof(sockaddr_un, sun_path) && m_addr.sun_path[0] != '\0')
+        if (m_length > offsetof(sockaddr_un, sun_path) && m_addr.sun_path[0] == '\0')
         {
             return os << "\\0" << std::string(m_addr.sun_path + 1, m_length - offsetof(sockaddr_un, sun_path) - 1);
         }
@@ -594,5 +594,10 @@ namespace tide
     {
         os << "[UnknownAddress family=" << m_addr.sa_family << "]";
         return os;
+    }
+
+    std::ostream &operator<<(std::ostream &os, const Address &addr)
+    {
+        return addr.insert(os);
     }
 }

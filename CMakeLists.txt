@@ -23,10 +23,15 @@ set(LIB_SRC
     tide/address.cc
     tide/socket.cc
     tide/bytearray.cc
-    tide/http.cc
-    tide/http11/http11_parser.cc
-    tide/http11/httpclient_parser.cc
-    tide/http_parser.cc
+    tide/http/http.cc
+    tide/http/http11/http11_parser.cc
+    tide/http/http11/httpclient_parser.cc
+    tide/http/http_parser.cc
+    tide/http/tcp_server.cc
+    tide/stream.cc
+    tide/socket_stream.cc
+    tide/http/http_session.cc
+    tide/http/http_server.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

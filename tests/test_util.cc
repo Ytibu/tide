@@ -1,4 +1,4 @@
-#include "../tide/tide.h"
+#include "../tide/log.h"
 #include "../tide/utils.h"
 #include <assert.h>
 #include "../tide/macro.h"
