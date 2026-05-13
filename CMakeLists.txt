@@ -28,6 +28,7 @@ set(LIB_SRC
     tide/http11/httpclient_parser.cc
     tide/http_parser.cc
     tide/tcp_server.cc
+    tide/stream.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})
