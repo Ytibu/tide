@@ -9,7 +9,8 @@ namespace tide
     namespace http
     {
 
-        static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
+        static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
+
         static tide::ConfigVar<uint64_t>::ptr g_http_request_buffer_size =
             tide::Config::Lookup("http.request.buffer_size", (uint64_t)(4 * 1024ull), "http request buffer size");
         static tide::ConfigVar<uint64_t>::ptr g_http_request_max_body_size =
@@ -18,21 +19,34 @@ namespace tide
         static uint64_t s_http_request_buffer_size = g_http_request_buffer_size->getValue();
         static uint64_t s_http_request_max_body_size = g_http_request_max_body_size->getValue();
 
-        struct _RequestSizeIniter
+        uint64_t HttpRequestParser::GetHttpRequestBufferSize()
         {
-            _RequestSizeIniter()
+            return s_http_request_buffer_size;
+        }
+
+        uint64_t HttpRequestParser::GetHttpResponseBufferSize()
+        {
+            return s_http_request_max_body_size;
+        }
+
+        namespace
+        {
+            struct _RequestSizeIniter
             {
-                g_http_request_buffer_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
-                                                        {
+                _RequestSizeIniter()
+                {
+                    g_http_request_buffer_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
+                                                            {
                     TIDE_LOG_INFO(g_logger) << "http request buffer size changed from " << old_value << " to " << new_value;
                     s_http_request_buffer_size = new_value; });
-                g_http_request_max_body_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
-                                                          {
+                    g_http_request_max_body_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
+                                                              {
                     TIDE_LOG_INFO(g_logger) << "http request max body size changed from " << old_value << " to " << new_value;
                     s_http_request_max_body_size = new_value; });
-            }
-        };
-        static _RequestSizeIniter _init;
+                }
+            };
+            static _RequestSizeIniter _init;
+        }
 
         void on_request_http_field(void *data, const char *field, size_t flen, const char *value, size_t vlen)
         {

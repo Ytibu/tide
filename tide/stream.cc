@@ -2,7 +2,9 @@
 
 namespace tide
 {
-
+    Stream::~Stream()
+    {
+    }
     int Stream::readFixSize(void *buffer, size_t length)
     {
         size_t left = length;

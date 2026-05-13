@@ -1,7 +1,6 @@
 #include "socket_stream.h"
 
 #include "socket.h"
-#include "bytearray.h"
 
 namespace tide
 {

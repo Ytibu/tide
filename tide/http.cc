@@ -161,6 +161,7 @@ namespace tide
 
         std::ostream &HttpResponse::dump(std::ostream &os) const
         {
+            if (!os.good()) return os;
             os << "HTTP/" 
                << ((m_version >> 4) & 0x0F) 
                << "." 
@@ -195,6 +196,18 @@ namespace tide
             std::stringstream ss;
             dump(ss);
             return ss.str();
+        }
+
+        std::ostream &operator<<(std::ostream &os, const HttpRequest &req)
+        {
+            req.dump(os);
+            return os;
+        }
+
+        std::ostream &operator<<(std::ostream &os, const HttpResponse &rsp)
+        {
+            rsp.dump(os);
+            return os;
         }
 
 
