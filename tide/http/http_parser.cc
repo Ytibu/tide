@@ -1,7 +1,7 @@
 #include "http_parser.h"
 
-#include "../tide/log.h"
-#include "../tide/config.h"
+#include "../log.h"
+#include "../config.h"
 
 namespace tide
 {

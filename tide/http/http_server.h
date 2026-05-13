@@ -1,0 +1,4 @@
+#ifndef TIDE_SOCKET_STREAM_H__
+#define TIDE_SOCKET_STREAM_H__
+
+#endif // TIDE_SOCKET_STREAM_H__

@@ -18,6 +18,6 @@
 #include "address.h"
 #include "socket.h"
 #include "bytearray.h"
-#include "http.h"
+#include "http/http.h"
 
 #endif // TIDE_H__

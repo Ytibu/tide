@@ -1,7 +1,7 @@
 #ifndef TIDE_HTTP_SESSION_H
 #define TIDE_HTTP_SESSION_H
 
-#include "socket_stream.h"
+#include "../socket_stream.h"
 #include "http.h"
 
 namespace tide
