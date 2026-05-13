@@ -32,6 +32,7 @@ set(LIB_SRC
     tide/socket_stream.cc
     tide/http/http_session.cc
     tide/http/http_server.cc
+    tide/http/servlet.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

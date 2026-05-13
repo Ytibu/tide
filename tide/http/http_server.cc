@@ -3,6 +3,7 @@
 #include "http_session.h"
 #include "http_parser.h"
 #include "../log.h"
+#include "servlet.h"
 
 static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
@@ -14,11 +15,11 @@ namespace tide
             : TcpServer(worker, accept_worker)
             , m_isKeepalive(keepalive)
         {
+            m_dispatch.reset(new ServletDispatch);
         }
 
         void HttpServer::handleClient(Socket::ptr client)
         {
-            TIDE_LOG_DEBUG(g_logger) << "handleClient " << *client;
             HttpSession::ptr session(new HttpSession(client));
             do
             {
@@ -31,9 +32,10 @@ namespace tide
                 }
                 http::HttpResponse::ptr rsp(new http::HttpResponse(req->getVersion(), req->isClose() || !m_isKeepalive));
 
-                rsp->setBody("fuck you nvidia");
-                TIDE_LOG_INFO(g_logger) << "request: " << *req;
-                TIDE_LOG_INFO(g_logger) << "Response: " << *rsp;
+                m_dispatch->handle(req, rsp, session);
+                // rsp->setBody("fuck you nvidia");
+                // TIDE_LOG_INFO(g_logger) << "request: " << *req;
+                // TIDE_LOG_INFO(g_logger) << "Response: " << *rsp;
 
                 session->sendResponse(rsp);
             } while (m_isKeepalive);

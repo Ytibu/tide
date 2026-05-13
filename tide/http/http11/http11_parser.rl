@@ -279,6 +279,12 @@ size_t http_parser_execute(http_parser *parser, const char *buffer, size_t len, 
 {
   if(len == 0) return 0;
 
+  // 原项目无法进行分段解析，此修改确保可以进行分段修改，从而防止包过大导致的其他问题
+  parser->nread =0;
+  parser->mark = 0;
+  parser->field_len = 0;
+  parser->field_start = 0;
+
   const char *p, *pe;
   int cs = parser->cs;
 
