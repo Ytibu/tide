@@ -1,6 +1,7 @@
 #include "servlet.h"
 
 #include "http.h"
+#include "../log.h"
 
 #include <fnmatch.h>
 
@@ -8,6 +9,7 @@ namespace tide
 {
     namespace http
     {
+        static tide::Logger::ptr g_logger = TIDE_LOG_NAME("http");
         Servlet::Servlet(const std::string &name)
         {
         }
@@ -34,12 +36,15 @@ namespace tide
 
         int32_t ServletDispatch::handle(tide::http::HttpRequest::ptr req, tide::http::HttpResponse::ptr rsp, tide::http::HttpSession::ptr session)
         {
+            // TIDE_LOG_INFO(g_logger) << "Request:\n" << req->toString();
             auto slt =  getMatchedServlet(req->getPath());
+            int32_t rt = 0;
             if(slt){
-                slt->handle(req, rsp, session);
+                rt = slt->handle(req, rsp, session);
             }
+            // TIDE_LOG_INFO(g_logger) << "Response:\n" << rsp->toString();
 
-            return 0;
+            return rt;
         }
 
         void ServletDispatch::addServlet(const std::string &path, Servlet::ptr slt)

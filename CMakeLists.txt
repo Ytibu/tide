@@ -27,6 +27,7 @@ set(LIB_SRC
     tide/http/http11/http11_parser.cc
     tide/http/http11/httpclient_parser.cc
     tide/http/http_parser.cc
+    tide/http/http_connection.cc
     tide/http/tcp_server.cc
     tide/stream.cc
     tide/socket_stream.cc

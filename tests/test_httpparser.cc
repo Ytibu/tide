@@ -42,7 +42,7 @@ void test_reponse()
 {
     std::string str = data2;
     tide::http::HttpResponseParser parser;
-    size_t s = parser.execute(&str[0], str.size());
+    size_t s = parser.execute(&str[0], str.size(), false);
 
     TIDE_LOG_INFO(g_logger) << "execute size=" << s << " total=" << str.size()
         << " isFinished=" << parser.isFinished() << " hasError=" << parser.hasError()

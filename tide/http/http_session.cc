@@ -67,6 +67,7 @@ namespace tide
                 {
                     if (readFixSize(&body[offset], content_length) <= 0)
                     {
+                        close();
                         return nullptr;
                     }
                 }

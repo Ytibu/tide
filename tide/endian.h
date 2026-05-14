@@ -33,23 +33,21 @@ namespace tide
     }
 #if __BYTE_ORDER == __BIG_ENDIAN
     #define TIDE_BYTE_ORDER TIDE_BIG_ENDIAN
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-    #define TIDE_BYTE_ORDER TIDE_LITTLE_ENDIAN
 #else
-    #error "Unknown byte order"
+    #define TIDE_BYTE_ORDER TIDE_LITTLE_ENDIAN
 #endif
 
 #if TIDE_BYTE_ORDER == TIDE_BIG_ENDIAN
     template<class T>
     T byteswapOnLittleEndian(T value)
     {
-        return byteswap(value);
+        return value;
     }
 
     template<class T>
     T byteswapOnBigEndian(T value)
     {
-        return value;
+        return byteswap(value);
     }
 
 #else
@@ -57,13 +55,13 @@ namespace tide
     template<class T>
     T byteswapOnLittleEndian(T value)
     {
-        return value;
+        return byteswap(value);
     }
 
     template<class T>
     T byteswapOnBigEndian(T value)
     {
-        return byteswap(value);
+        return value;
     }
 #endif
 

@@ -11,22 +11,41 @@ namespace tide
 
         static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
+        // HTTP 请求和响应的缓冲区大小以及最大 body 大小，可以通过配置文件进行配置，并且支持动态修改
         static tide::ConfigVar<uint64_t>::ptr g_http_request_buffer_size =
             tide::Config::Lookup("http.request.buffer_size", (uint64_t)(4 * 1024ull), "http request buffer size");
         static tide::ConfigVar<uint64_t>::ptr g_http_request_max_body_size =
             tide::Config::Lookup("http.request.max_body_size", (uint64_t)(64 * 1024 * 1024ull), "http request max body size");
 
-        static uint64_t s_http_request_buffer_size = g_http_request_buffer_size->getValue();
-        static uint64_t s_http_request_max_body_size = g_http_request_max_body_size->getValue();
+        static tide::ConfigVar<uint64_t>::ptr g_http_response_buffer_size =
+            tide::Config::Lookup("http.response.buffer_size", (uint64_t)(4 * 1024ull), "http response buffer size");
+        static tide::ConfigVar<uint64_t>::ptr g_http_response_max_body_size =
+            tide::Config::Lookup("http.response.max_body_size", (uint64_t)(64 * 1024 * 1024ull), "http response max body size");
+
+        // 初始化
+        static uint64_t s_http_request_buffer_size = 0;
+        static uint64_t s_http_response_buffer_size = 0;
+        static uint64_t s_http_request_max_body_size = 0;
+        static uint64_t s_http_response_max_body_size = 0;
 
         uint64_t HttpRequestParser::GetHttpRequestBufferSize()
         {
             return s_http_request_buffer_size;
         }
 
-        uint64_t HttpRequestParser::GetHttpResponseBufferSize()
+        uint64_t HttpRequestParser::GetHttpRequestMaxBodySize()
         {
             return s_http_request_max_body_size;
+        }
+
+        uint64_t HttpResponseParser::GetHttpResponseBufferSize()
+        {
+            return s_http_response_buffer_size;
+        }
+        
+        uint64_t HttpResponseParser::GetHttpResponseMaxBodySize()
+        {
+            return s_http_response_max_body_size;
         }
 
         namespace
@@ -35,14 +54,22 @@ namespace tide
             {
                 _RequestSizeIniter()
                 {
+                    s_http_request_buffer_size = g_http_request_buffer_size->getValue();
+                    s_http_response_buffer_size = g_http_response_buffer_size->getValue();
+                    s_http_request_max_body_size = g_http_request_max_body_size->getValue();
+                    s_http_response_max_body_size = g_http_response_max_body_size->getValue();
+
                     g_http_request_buffer_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
-                                                            {
-                    TIDE_LOG_INFO(g_logger) << "http request buffer size changed from " << old_value << " to " << new_value;
-                    s_http_request_buffer_size = new_value; });
+                                                            { s_http_request_buffer_size = new_value; });
+
                     g_http_request_max_body_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
-                                                              {
-                    TIDE_LOG_INFO(g_logger) << "http request max body size changed from " << old_value << " to " << new_value;
-                    s_http_request_max_body_size = new_value; });
+                                                              { s_http_request_max_body_size = new_value; });
+
+                    g_http_response_buffer_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
+                                                             { s_http_response_buffer_size = new_value; });
+
+                    g_http_response_max_body_size->addListener([](const uint64_t &old_value, const uint64_t &new_value)
+                                                               { s_http_response_max_body_size = new_value; });
                 }
             };
             static _RequestSizeIniter _init;
@@ -136,9 +163,9 @@ namespace tide
 
         size_t HttpRequestParser::execute(char *data, size_t len)
         {
-            size_t off = http_parser_execute(&m_parser, data, len, 0);
-            memmove(data, data + off, len - off);
-            return off;
+            size_t offset = http_parser_execute(&m_parser, data, len, 0);
+            memmove(data, data + offset, (len - offset));
+            return offset;
         }
 
         uint64_t HttpRequestParser::getContentLength()
@@ -152,7 +179,7 @@ namespace tide
             if (flen == 0)
             {
                 TIDE_LOG_WARN(g_logger) << "invalid http header field length: " << flen;
-                parser->setError(1002);
+                // parser->setError(1002);
                 return;
             }
             parser->getResponse()->setHeader(std::string(field, flen), std::string(value, vlen));
@@ -220,11 +247,19 @@ namespace tide
             m_parser.data = this;
         }
 
-        size_t HttpResponseParser::execute(char *data, size_t len)
+        // 解析 HTTP 响应报文，支持 chunked 和非 chunked 两种传输方式。
+        size_t HttpResponseParser::execute(char *data, size_t len, bool chunked)
         {
+            if(chunked){
+                httpclient_parser_init(&m_parser);
+            }
             size_t off = httpclient_parser_execute(&m_parser, data, len, 0);
-            memmove(data, data + off, len - off);
-            return off;
+            size_t move_off = off;
+            if(m_parser.body_start > 0 && m_parser.body_start <= len){
+                move_off = m_parser.body_start;
+            }
+            memmove(data, data + move_off, len - move_off);
+            return move_off;
         }
         uint64_t HttpResponseParser::getContentLength()
         {

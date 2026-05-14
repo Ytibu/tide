@@ -26,10 +26,11 @@ namespace  tide
             void setError(int v) { m_error = v; }
 
             uint64_t getContentLength();
+            const http_parser &getParser() const { return m_parser; }
 
         public:
             static uint64_t GetHttpRequestBufferSize();
-            static uint64_t GetHttpResponseBufferSize();
+            static uint64_t GetHttpRequestMaxBodySize();
 
         private:
             http_parser m_parser;
@@ -46,12 +47,16 @@ namespace  tide
 
             int isFinished() { return httpclient_parser_is_finished(&m_parser); }
             int hasError() { return m_error || httpclient_parser_has_error(&m_parser); }
-            size_t execute(char *data, size_t len);
+            size_t execute(char *data, size_t len, bool chunked);
 
             HttpResponse::ptr getResponse() const { return m_response; }
             void setError(int v) { m_error = v; }
 
             uint64_t getContentLength();
+            const httpclient_parser &getParser() const { return m_parser; }
+        public:
+            static uint64_t GetHttpResponseBufferSize();
+            static uint64_t GetHttpResponseMaxBodySize();
 
         private:
             httpclient_parser m_parser;

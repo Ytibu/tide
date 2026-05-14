@@ -32,8 +32,9 @@ namespace tide
                 }
                 http::HttpResponse::ptr rsp(new http::HttpResponse(req->getVersion(), req->isClose() || !m_isKeepalive));
 
+                rsp->setHeader("Server", getName());
                 m_dispatch->handle(req, rsp, session);
-                // rsp->setBody("fuck you nvidia");
+                // rsp->setBody("hello world");
                 // TIDE_LOG_INFO(g_logger) << "request: " << *req;
                 // TIDE_LOG_INFO(g_logger) << "Response: " << *rsp;
 

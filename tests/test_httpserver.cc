@@ -1,5 +1,6 @@
 #include "../tide/http/http_server.h"
 #include "../tide/log.h"
+#include "../tide/address.h"
 
 static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
