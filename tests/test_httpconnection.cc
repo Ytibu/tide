@@ -7,6 +7,23 @@
 
 static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
+void test_pool()
+{
+    tide::http::HttpConnectionPool::ptr pool(new tide::http::HttpConnectionPool("8.146.201.152", "", 80, 10, 1000 * 30, 20));
+    if(!pool)
+    {
+        TIDE_LOG_ERROR(g_logger) << "create http connection pool failed";
+        return;
+    }
+
+    tide::IOManager::GetThis()->addTimer(1000, [pool](){
+        auto r = pool->doGET("/", 3000);
+        TIDE_LOG_INFO(g_logger) << "result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : "");
+    }, true);
+
+
+
+}
 
 void run()
 {
@@ -56,6 +73,7 @@ void run()
     auto r = tide::http::HttpConnection::DoGET("http://8.146.201.152/assistant.html", 5000);
     TIDE_LOG_INFO(g_logger) << "DoGET result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : "");
 
+    test_pool();
 }
 
 int main()

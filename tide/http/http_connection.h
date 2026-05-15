@@ -2,6 +2,10 @@
 #define TIDE_HTTP_CONNECTION_H
 
 #include <memory>
+#include <list>
+#include <map>
+#include <string>
+#include <atomic>
 
 #include <stdint.h>
 
@@ -43,6 +47,8 @@ namespace tide
         // 表示一个 HTTP 连接，封装了发送 HTTP 请求和接收 HTTP 响应的功能
         class HttpConnection : public SocketStream
         {
+            friend class HttpConnectionPool;
+
         public:
             using ptr = std::shared_ptr<HttpConnection>;
 
@@ -76,6 +82,10 @@ namespace tide
             HttpResponse::ptr recvResponse();
             // 发送 HTTP 请求
             int sendRequest(HttpRequest::ptr req);
+
+        private:
+            uint64_t m_createTime = 0; // 连接创建时间，单位毫秒
+            uint64_t m_requestCount = 0; // 已经发送的请求数量
         };
 
         class HttpConnectionPool
@@ -91,44 +101,40 @@ namespace tide
                                uint32_t maxAliveTime,
                                uint32_t maxRequest);
 
-            HttpConnectionPool::ptr getConnection();
+            HttpConnection::ptr getConnection();
 
             HttpResult::ptr doGET(const std::string &url,
                                   uint64_t timeout_ms,
                                   const std::map<std::string, std::string> &headers = {},
                                   const std::string &body = "");
 
-            HttpResult::ptr doGETr(Uri::ptr uri,
-                                   uint64_t timeout_ms,
-                                   const std::map<std::string, std::string> &headers = {},
-                                   const std::string &body = "");
+            HttpResult::ptr doGET(Uri::ptr uri,
+                                  uint64_t timeout_ms,
+                                  const std::map<std::string, std::string> &headers = {},
+                                  const std::string &body = "");
 
             HttpResult::ptr doPOST(const std::string &url,
                                    uint64_t timeout_ms,
                                    const std::map<std::string, std::string> &headers = {},
                                    const std::string &body = "");
 
-            HttpResult::ptr doPOSTr(Uri::ptr uri,
-                                    uint64_t timeout_ms,
-                                    const std::map<std::string, std::string> &headers = {},
-                                    const std::string &body = "");
+            HttpResult::ptr doPOST(Uri::ptr uri,
+                                   uint64_t timeout_ms,
+                                   const std::map<std::string, std::string> &headers = {},
+                                   const std::string &body = "");
 
-            HttpResult::ptr DoRequest(HttpMethod method,
+            HttpResult::ptr doRequest(HttpMethod method,
                                       const std::string &url,
                                       uint64_t timeout_ms,
                                       const std::map<std::string, std::string> &headers = {},
                                       const std::string &body = "");
-            HttpResult::ptr DoRequestR(HttpMethod method,
+            HttpResult::ptr doRequest(HttpMethod method,
                                       Uri::ptr uri,
                                       uint64_t timeout_ms,
                                       const std::map<std::string, std::string> &headers = {},
                                       const std::string &body = "");
 
-            HttpRequest::ptr DoRequest(HttpRequest::ptr req,
-                                       Uri::ptr uri,
-                                       uint64_t timeout_ms,
-                                       const std::map<std::string, std::string> &headers = {},
-                                       const std::string &body = "");
+            HttpResult::ptr doRequest(HttpRequest::ptr req, uint64_t timeout_ms);
 
         private:
             static void ReleasePtr(HttpConnection *ptr, HttpConnectionPool *pool);
