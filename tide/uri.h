@@ -24,7 +24,7 @@ namespace tide
 
         static Uri::ptr Create(const std::string &uri);
 
-        Uri() = default;
+        Uri();
 
         void setScheme(const std::string &v) { m_scheme = v; }
         void setUserinfo(const std::string &v) { m_userinfo = v; }
@@ -37,11 +37,12 @@ namespace tide
         const std::string &getScheme() const { return m_scheme; }
         const std::string &getUserinfo() const { return m_userinfo; }
         const std::string &getHost() const { return m_host; }
-        const std::string &getPath() const { return m_path; }
+        const std::string &getPath() const;
         const std::string &getQuery() const { return m_query; }
         const std::string &getFragment() const { return m_fragment; }
-        int32_t getPort() const { return m_port; }
+        int32_t getPort() const;
 
+        bool isDefaultPort() const;
         std::ostream &dump(std::ostream &os) const;
         std::string toString() const;
         Address::ptr createAddress() const;

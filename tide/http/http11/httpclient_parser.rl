@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include <cerrno>
+#include <errno.h>
 //#include "dbg.h"
 
 #define LEN(AT, FPC) (FPC - buffer - parser->AT)

@@ -110,6 +110,11 @@ namespace tide
     // 通过fd获取FdCtx：如果不存在，并且auto_create=true，则创建一个新的FdCtx
     FdCtx::ptr FdManager::get(int fd, bool auto_create)
     {
+        if(fd == -1)
+        {
+            return nullptr;
+        }
+
         // 根据大小判断是否越界，根据是否创建进行返回
         RWMutexType::ReadLock lock(m_mutex);
         if ((int)m_datas.size() <= fd)

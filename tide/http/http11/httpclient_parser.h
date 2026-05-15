@@ -39,6 +39,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 typedef struct httpclient_parser { 
   int cs;
   size_t body_start;

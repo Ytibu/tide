@@ -10,7 +10,7 @@ static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
 void run()
 {
-    tide::Address::ptr addr = tide::IPv4Address::LookupAny("127.0.0.1:8080");
+    tide::Address::ptr addr = tide::IPv4Address::LookupAny("www.baidu.com:80");
     if (!addr)
     {
         TIDE_LOG_ERROR(g_logger) << "get address error";
@@ -43,6 +43,18 @@ void run()
         return;
     }
     TIDE_LOG_INFO(g_logger) << "rsp=\n" << *rsp;
+
+    // 写入文件
+    std::ofstream ofs("./log/response.txt");
+    ofs << *rsp;
+    ofs.close();
+
+
+    std::cout << "-----------------------------------------" << std::endl;
+
+    // auto r = tide::http::HttpConnection::DoGET("http://chat.baidu.com/search/9006854824565958738?enter_type=pic_picfunc_3", 5000);
+    auto r = tide::http::HttpConnection::DoGET("http://8.146.201.152/assistant.html", 5000);
+    TIDE_LOG_INFO(g_logger) << "DoGET result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : "");
 
 }
 

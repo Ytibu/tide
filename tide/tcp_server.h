@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "../iomanager.h"
-#include "../noncopyable.h"
+#include "iomanager.h"
+#include "noncopyable.h"
 
 namespace tide
 {
