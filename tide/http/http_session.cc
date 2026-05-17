@@ -7,6 +7,9 @@ namespace tide
 {
     namespace http
     {
+
+        // 利用Socket指针构造 HttpSession 对象，owner 参数表示是否拥有这个 socket，
+        // 如果拥有在 HttpSession 对象销毁时会自动关闭这个 socket，否则 HttpSession 对象销毁时不会关闭这个 socket
         HttpSession::HttpSession(Socket::ptr sock, bool owner)
             : SocketStream(sock, owner)
         {
@@ -77,6 +80,7 @@ namespace tide
             return parser->getRequest();
         }
 
+        // 发送 HTTP 响应，步骤：将 HttpResponse 对象转换为字符串，发送字符串数据
         int HttpSession::sendResponse(HttpResponse::ptr rsp)
         {
             std::stringstream ss;

@@ -261,6 +261,8 @@ namespace tide
             memmove(data, data + move_off, len - move_off);
             return move_off;
         }
+
+        // 获取 HTTP 响应的内容长度，优先从 Content-Length 头部获取，如果没有则返回 0。
         uint64_t HttpResponseParser::getContentLength()
         {
             return m_response->getHeaderAs<uint64_t>("content-length", 0);

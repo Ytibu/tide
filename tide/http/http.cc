@@ -4,6 +4,7 @@ namespace tide
 {
     namespace http
     {
+        // 字符串转换为 HTTP 方法
         HttpMethod StringToHttpMethod(const std::string &method)
         {
             #define XX(num, name, string) if (strcasecmp(method.c_str(), #string) == 0) { return HttpMethod::HTTP_##name; }
@@ -11,6 +12,8 @@ namespace tide
             #undef XX
             return HttpMethod::HTTP_INVALID_METHOD;
         }
+
+
         HttpMethod CharsToHttpMethod(const char *method)
         {
             #define XX(num, name, string) if (strncmp(#string, method, strlen(#string)) == 0) { return HttpMethod::HTTP_##name; }
@@ -24,6 +27,8 @@ namespace tide
                 HTTP_METHOD_MAP(XX)
             #undef XX
         };
+
+
         const char *HttpMethodToString(const HttpMethod &method)
         {
             uint32_t idx = (uint32_t)method;
@@ -32,6 +37,8 @@ namespace tide
             }
             return s_method_string[idx];
         }
+
+
         const char *HttpStatusToString(const HttpStatus &status)
         {
             switch (status)
@@ -44,25 +51,30 @@ namespace tide
             }
         }
 
+
         HttpRequest::HttpRequest(uint8_t version, bool close)
             : m_method(HttpMethod::HTTP_GET)
-            , m_status(HttpStatus::HTTP_STATUS_OK)
             , m_version(version)
             , m_close(close)
             , m_path("/")
         {
         }
 
+
         std::string HttpRequest::getHeader(const std::string &key, const std::string &default_value) const
         {
             auto it = m_headers.find(key);
             return it == m_headers.end() ? default_value : it->second;
         }
+
+
         std::string HttpRequest::getParameter(const std::string &key, const std::string &default_value) const
         {
             auto it = m_parameters.find(key);
             return it == m_parameters.end() ? default_value : it->second;
         }
+
+
         std::string HttpRequest::getCookie(const std::string &key, const std::string &default_value) const
         {
             auto it = m_cookies.find(key);
@@ -82,6 +94,8 @@ namespace tide
             }
             return true;
         }
+
+
         bool HttpRequest::hasParameter(const std::string &key, std::string *value) const
         {
             auto it = m_parameters.find(key);
@@ -94,6 +108,8 @@ namespace tide
             }
             return true;
         }
+
+
         bool HttpRequest::hasCookie(const std::string &key, std::string *value) const
         {
             auto it = m_cookies.find(key);
@@ -106,6 +122,7 @@ namespace tide
             }
             return true;
         }
+
 
         std::ostream &HttpRequest::dump(std::ostream &os) const
         {
@@ -138,6 +155,7 @@ namespace tide
             return os;
         }
 
+
         std::string HttpRequest::toString() const
         {
             std::stringstream ss;
@@ -153,11 +171,13 @@ namespace tide
         {
         }
 
+
         std::string HttpResponse::getHeader(const std::string &key, const std::string &default_value) const
         {
             auto it = m_headers.find(key);
             return it == m_headers.end() ? default_value : it->second;
         }
+
 
         std::ostream &HttpResponse::dump(std::ostream &os) const
         {
@@ -191,6 +211,7 @@ namespace tide
             return os;
         }
 
+
         std::string HttpResponse::toString() const
         {
             std::stringstream ss;
@@ -198,11 +219,13 @@ namespace tide
             return ss.str();
         }
 
+
         std::ostream &operator<<(std::ostream &os, const HttpRequest &req)
         {
             req.dump(os);
             return os;
         }
+
 
         std::ostream &operator<<(std::ostream &os, const HttpResponse &rsp)
         {

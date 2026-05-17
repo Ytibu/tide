@@ -8,3 +8,5 @@ log/
 config/
 conf/
 .deepseek/
+html/
+latex/

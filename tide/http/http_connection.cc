@@ -16,8 +16,6 @@ namespace tide
     {
         static Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
-        // 提供静态方法，方便用户直接通过 URL 发起 GET/POST 请求，内部会创建 HttpRequest 对象并调用 DoRequest。
-
         // 接收一个 URL 字符串，解析成 Uri 对象，如果解析失败则返回错误结果，否则调用重载的 DoGET 方法。
         HttpResult::ptr HttpConnection::DoGET(const std::string url,
                                               uint64_t timout_ms,
@@ -103,7 +101,7 @@ namespace tide
                     continue;
                 }
 
-                if (!has_host && strcasecmp(kv.first.c_str(), "host") == 0)
+                if (!has_host && (strcasecmp(kv.first.c_str(), "host") == 0))
                 {
                     has_host = !kv.second.empty();
                 }
@@ -160,7 +158,7 @@ namespace tide
                 return std::make_shared<HttpResult>((int)HttpResult::Error::RECV_FAIL, nullptr, "recv response fail");
             }
 
-            return std::make_shared<HttpResult>((int)HttpResult::Error::OK, rsp, "");
+            return std::make_shared<HttpResult>((int)HttpResult::Error::OK, rsp, "ok");
         }
 
         HttpConnection::HttpConnection(Socket::ptr sock, bool owner)
@@ -334,44 +332,46 @@ namespace tide
         {
         }
 
+        // 获取连接池中的一个连接，如果连接池中没有可用连接或者所有连接都已失效，则创建一个新的连接返回。
         HttpConnection::ptr HttpConnectionPool::getConnection()
         {
             uint64_t now_ms = tide::GetCurrentMS();
             std::vector<HttpConnection *> invalid_conns;
-            HttpConnection *result = nullptr;
+            HttpConnection *ptr = nullptr;
 
+            // 从连接池中获取一个连接，首先锁住连接池的互斥量，遍历连接池中的连接，检查每个连接是否可用，如果不可用或者超过最大存活时间，则将其加入无效连接列表，否则返回该连接。
             MutexType::Lock lock(m_mutex);
             while (!m_conns.empty())
             {
+                // 取出连接并从连接池中移除
                 auto conn = *m_conns.begin();
                 m_conns.pop_front();
 
-                if (!conn->isConnected())
+                // 检查连接是否可用，如果不可用或者超过最大存活时间，则将其加入无效连接列表，否则将该连接赋值给 ptr 并跳出循环。
+                if (!conn->isConnected() || ((conn->m_createTime + m_maxAliveTime) > now_ms))
                 {
                     invalid_conns.push_back(conn);
                     continue;
                 }
-
-                if ((conn->m_createTime + m_maxAliveTime) > now_ms)
-                {
-                    invalid_conns.push_back(conn);
-                    continue;
-                }
-                result = conn;
+                ptr = conn;
                 break;
             }
             lock.unlock();
+
+            // 销毁所有无效连接，并更新连接池的总连接数。如果没有找到可用连接，则创建一个新的连接并返回。
             for (auto i : invalid_conns)
             {
                 delete i;
             }
             m_total -= invalid_conns.size();
-            if (!result)
+
+            // 如果没有可用连接，则创建一个新的连接并返回。
+            if (!ptr)
             {
                 IPAddress::ptr addr = Address::LookupAnyIPAddress(m_host);
                 if (!addr)
                 {
-                    TIDE_LOG_ERROR(g_logger) <<"get address failed: " << m_host;
+                    TIDE_LOG_ERROR(g_logger) << "get address failed: " << m_host;
                     return nullptr;
                 }
 
@@ -383,22 +383,25 @@ namespace tide
                     return nullptr;
                 }
 
-                if(!sock->connect(addr))
+                if (!sock->connect(addr))
                 {
                     TIDE_LOG_ERROR(g_logger) << "connect failed for: " << addr->toString();
                     return nullptr;
                 }
 
-                result = new HttpConnection(sock);
+                // 利用socket创建一个新的 HttpConnection 对象，并将其赋值给 ptr，同时增加连接池的总连接数。
+                ptr = new HttpConnection(sock);
                 ++m_total;
             }
 
-            return HttpConnection::ptr(result, std::bind(&HttpConnectionPool::ReleasePtr, std::placeholders::_1, this));
+            // 返回一个智能指针，绑定了连接对象和连接池的释放函数，当智能指针被销毁时会自动调用释放函数将连接放回连接池或者销毁连接。
+            return HttpConnection::ptr(ptr, std::bind(&HttpConnectionPool::ReleasePtr, std::placeholders::_1, this));
         }
 
+        // 释放连接到连接池，如果连接不可用或者超过最大存活时间或者请求数量超过限制，则销毁连接，否则放回连接池供后续使用。
         void HttpConnectionPool::ReleasePtr(HttpConnection *ptr, HttpConnectionPool *pool)
         {
-            if(!ptr->isConnected() || ptr->m_createTime + pool->m_maxAliveTime >= tide::GetCurrentMS() || ptr->m_requestCount >= pool->m_maxRequest)
+            if (!ptr->isConnected() || ptr->m_createTime + pool->m_maxAliveTime >= tide::GetCurrentMS() || ptr->m_requestCount >= pool->m_maxRequest)
             {
                 delete ptr;
                 --pool->m_total;
@@ -408,7 +411,6 @@ namespace tide
             ++ptr->m_requestCount;
             MutexType::Lock lock(pool->m_mutex);
             pool->m_conns.push_back(ptr);
-
         }
 
         HttpResult::ptr HttpConnectionPool::doGET(const std::string &url,
@@ -419,10 +421,11 @@ namespace tide
             return doRequest(HttpMethod::HTTP_GET, url, timeout_ms, headers, body);
         }
 
+        // 解析uri为字符串url，调用重载doGET
         HttpResult::ptr HttpConnectionPool::doGET(Uri::ptr uri,
-                                                   uint64_t timeout_ms,
-                                                   const std::map<std::string, std::string> &headers,
-                                                   const std::string &body)
+                                                  uint64_t timeout_ms,
+                                                  const std::map<std::string, std::string> &headers,
+                                                  const std::string &body)
         {
             std::stringstream ss;
             ss << uri->getPath()
@@ -440,9 +443,9 @@ namespace tide
         }
 
         HttpResult::ptr HttpConnectionPool::doPOST(Uri::ptr uri,
-                                                    uint64_t timeout_ms,
-                                                    const std::map<std::string, std::string> &headers,
-                                                    const std::string &body)
+                                                   uint64_t timeout_ms,
+                                                   const std::map<std::string, std::string> &headers,
+                                                   const std::string &body)
         {
             std::stringstream ss;
             ss << uri->getPath()
@@ -494,10 +497,10 @@ namespace tide
             return doRequest(req, timeout_ms);
         }
         HttpResult::ptr HttpConnectionPool::doRequest(HttpMethod method,
-                                                       Uri::ptr uri,
-                                                       uint64_t timeout_ms,
-                                                       const std::map<std::string, std::string> &headers,
-                                                       const std::string &body)
+                                                      Uri::ptr uri,
+                                                      uint64_t timeout_ms,
+                                                      const std::map<std::string, std::string> &headers,
+                                                      const std::string &body)
         {
             std::stringstream ss;
             ss << uri->getPath()
@@ -506,21 +509,25 @@ namespace tide
             return doRequest(method, ss.str(), timeout_ms, headers, body);
         }
 
+        // 连接池的核心方法，接收一个 HttpRequest 指针对象，负责从连接池中获取一个连接对象，将请求发送到服务器并等待响应，最后返回 HttpResult 对象封装请求结果。
         HttpResult::ptr HttpConnectionPool::doRequest(HttpRequest::ptr req, uint64_t timeout_ms)
         {
-            auto conn = getConnection();
+            HttpConnection::ptr conn = getConnection();
             if (!conn)
             {
                 return std::make_shared<HttpResult>((int)HttpResult::Error::CONNECT_FAIL, nullptr, "get connection from pool fail");
             }
 
-            auto socket = conn->getSocket();
-            if (!socket)            
+            Socket::ptr socket = conn->getSocket();
+            if (!socket)
             {
                 return std::make_shared<HttpResult>((int)HttpResult::Error::CONNECT_FAIL, nullptr, "invalid socket from connection");
             }
 
+            // 设置socket超时时间
             socket->setRecvTimeout(timeout_ms);
+
+            // 将 HttpRequest 序列化为 HTTP 报文并写入 socket。
             int rt = conn->sendRequest(req);
             if (rt == 0)
             {
@@ -531,8 +538,9 @@ namespace tide
                 return std::make_shared<HttpResult>((int)HttpResult::Error::SEND_FAIL, nullptr, "send request fail");
             }
 
-            auto rsp = conn->recvResponse();
-            if (!rsp)            
+            // 接收 HTTP 响应，解析 HTTP 响应，返回 HttpResponse 对象
+            HttpResponse::ptr rsp = conn->recvResponse();
+            if (!rsp)
             {
                 return std::make_shared<HttpResult>((int)HttpResult::Error::RECV_FAIL, nullptr, "recv response fail");
             }

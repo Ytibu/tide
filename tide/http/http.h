@@ -19,7 +19,7 @@ namespace tide
     namespace http
     {
 
-        /* Status Codes */
+        /* Status Codes 例如: HTTP_STATUS_OK */
 #define HTTP_STATUS_MAP(XX)                                                   \
     XX(100, CONTINUE, Continue)                                               \
     XX(101, SWITCHING_PROTOCOLS, Switching Protocols)                         \
@@ -87,8 +87,19 @@ namespace tide
             HTTP_STATUS_MAP(XX)
 #undef XX
         };
+        /**
+         * @brief 展开后：
+         * enum class HttpStatus
+         * {
+         *   HTTP_STATUS_CONTINUE = 100,
+         *   HTTP_STATUS_SWITCHING_PROTOCOLS = 101,
+         *   HTTP_STATUS_PROCESSING = 102,
+         *   HTTP_STATUS_OK = 200,
+         *   // ... 其余状态码
+         * };
+         */
 
-        /* Request Methods */
+        /* Request Methods 例如: HTTP_GET */
 #define HTTP_METHOD_MAP(XX)          \
     XX(0, DELETE, DELETE)            \
     XX(1, GET, GET)                  \
@@ -141,11 +152,54 @@ namespace tide
                 HTTP_INVALID_METHOD
         };
 
+        /**
+         * @brief 展开后：
+         *
+         * enum class HttpMethod
+         * {
+         *   HTTP_DELETE = 0,
+         *   HTTP_GET = 1,
+         *   HTTP_HEAD = 2,
+         *   HTTP_POST = 3,
+         *   HTTP_PUT = 4,
+         *   // ... 其余操作码
+         * };
+         */
+
+        /**
+         * @brief 将字符串转换为 HTTP 方法
+         * HTTP_GET --> HttpMethod::HTTP_GET
+         *
+         * @param method HTTP 方法字符串
+         * @return HttpMethod
+         */
         HttpMethod StringToHttpMethod(const std::string &method);
+
+        /**
+         * @brief 将字符数组转换为 HTTP 方法
+         *
+         * @param method HTTP 方法字符数组
+         * @return HttpMethod
+         */
         HttpMethod CharsToHttpMethod(const char *method);
+
+        /**
+         * @brief 将 HTTP 方法转换为字符串
+         *
+         * @param method HTTP 方法枚举值
+         * @return const char*
+         */
         const char *HttpMethodToString(const HttpMethod &method);
+
+        /**
+         * @brief 将 HTTP 状态码转换为字符串
+         *
+         * @param status HTTP 状态码枚举值
+         * @return const char*
+         */
         const char *HttpStatusToString(const HttpStatus &status);
 
+        // HTTP 头部字段不区分大小写，因此使用自定义比较器实现 case-insensitive map
         struct CaseInsensitiveLess
         {
             bool operator()(const std::string &lhs, const std::string &rhs) const
@@ -154,19 +208,85 @@ namespace tide
             }
         };
 
+        /**
+         * @brief 从 map 中检查并获取值，并转换为指定类型，如果键不存在或转换失败则返回false，并将 value 设置为默认值
+         *
+         * @tparam MapType
+         * @tparam T
+         * @param m 查找的 map
+         * @param key 要查找的键
+         * @param value 输出参数，用于存储转换后的值
+         * @param default_value 默认值，当键不存在或转换失败时返回
+         * @return bool 如果键存在且转换成功返回 true，否则返回 false，并将 value 设置为 default_value
+         */
+        template <typename MapType, typename T>
+        bool CheckgetAs(const MapType &m, const std::string &key, T &value, const T &default_value = T())
+        {
+            auto it = m.find(key);
+            if (it == m.end())
+            {
+                value = default_value;
+                return false;
+            }
+            try
+            {
+                value = boost::lexical_cast<T>(it->second);
+                return true;
+            }
+            catch (...)
+            {
+                value = default_value;
+            }
+
+            return false;
+        }
+
+        /**
+         * @brief 从 map 中获取值并转换为指定类型，如果键不存在或转换失败则返回默认值
+         *
+         * @tparam MapType
+         * @tparam T
+         * @param m 查找的 map
+         * @param key 要查找的键
+         * @param default_value 默认值，当键不存在或转换失败时返回
+         * @return T
+         */
+        template <typename MapType, typename T>
+        T getAs(const MapType &m, const std::string &key, const T &default_value = T())
+        {
+            auto it = m.find(key);
+            if (it == m.end())
+            {
+                return default_value;
+            }
+            try
+            {
+                return boost::lexical_cast<T>(it->second);
+            }
+            catch (...)
+            {
+            }
+            return default_value;
+        }
+
         class HttpRequest
         {
         public:
             using ptr = std::shared_ptr<HttpRequest>;
             using MapType = std::map<std::string, std::string, CaseInsensitiveLess>;
 
+            /**
+             * @brief 构造函数，默认 HTTP 版本为 1.1，连接默认保持close状态
+             * 
+             * @param version 
+             * @param close 
+             */
             HttpRequest(uint8_t version = 0x11, bool close = true);
 
             bool isClose() const { return m_close; }
             void setClose(bool close) { m_close = close; }
 
             HttpMethod getMethod() const { return m_method; }
-            HttpStatus getStatus() const { return m_status; }
             uint8_t getVersion() const { return m_version; }
 
             const std::string &getPath() const { return m_path; }
@@ -179,7 +299,6 @@ namespace tide
             const MapType &getCookies() const { return m_cookies; }
 
             void setMethod(const HttpMethod &method) { m_method = method; }
-            void setStatus(const HttpStatus &status) { m_status = status; }
             void setVersion(const uint8_t &version) { m_version = version; }
 
             void setPath(const std::string &path) { m_path = path; }
@@ -233,48 +352,7 @@ namespace tide
             std::ostream &dump(std::ostream &os) const;
 
         private:
-            template <typename MapType, typename T>
-            bool CheckgetAs(const MapType &m, const std::string &key, T &value, const T &default_value = T()) const
-            {
-                auto it = m.find(key);
-                if (it == m.end())
-                {
-                    value = default_value;
-                    return false;
-                }
-                try
-                {
-                    value = boost::lexical_cast<T>(it->second);
-                }
-                catch (...)
-                {
-                    value = default_value;
-                }
-
-                return false;
-            }
-
-            template <typename MapType, typename T>
-            T getAs(const MapType &m, const std::string &key, const T &default_value = T()) const
-            {
-                auto it = m.find(key);
-                if (it == m.end())
-                {
-                    return default_value;
-                }
-                try
-                {
-                    return boost::lexical_cast<T>(it->second);
-                }
-                catch (...)
-                {
-                }
-                return default_value;
-            }
-
-        private:
             HttpMethod m_method;
-            HttpStatus m_status;
             uint8_t m_version;
             bool m_close;
 
@@ -327,45 +405,6 @@ namespace tide
 
             std::ostream &dump(std::ostream &os) const;
             std::string toString() const;
-        private:
-            template <typename MapType, typename T>
-            bool CheckgetAs(const MapType &m, const std::string &key, T &value, const T &default_value = T()) const
-            {
-                auto it = m.find(key);
-                if (it == m.end())
-                {
-                    value = default_value;
-                    return false;
-                }
-                try
-                {
-                    value = boost::lexical_cast<T>(it->second);
-                }
-                catch (...)
-                {
-                    value = default_value;
-                }
-
-                return false;
-            }
-
-            template <typename MapType, typename T>
-            T getAs(const MapType &m, const std::string &key, const T &default_value = T()) const
-            {
-                auto it = m.find(key);
-                if (it == m.end())
-                {
-                    return default_value;
-                }
-                try
-                {
-                    return boost::lexical_cast<T>(it->second);
-                }
-                catch (...)
-                {
-                }
-                return default_value;
-            }
 
         private:
             HttpStatus m_status;

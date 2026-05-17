@@ -73,7 +73,7 @@ void run()
     auto r = tide::http::HttpConnection::DoGET("http://8.146.201.152/assistant.html", 5000);
     TIDE_LOG_INFO(g_logger) << "DoGET result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : "");
 
-    test_pool();
+    // test_pool();
 }
 
 int main()
