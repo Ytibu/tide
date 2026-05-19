@@ -6,6 +6,8 @@
 #include "log.h"
 #include "macro.h"
 #include "config.h"
+#include "hook.h"
+#include "iomanager.h"
 
 namespace tide
 {
@@ -85,6 +87,7 @@ namespace tide
         m_autoStop = true;
         if (m_rootFiber && m_threadCount == 0 && (m_rootFiber->getState() == Fiber::TERM || m_rootFiber->getState() == Fiber::INIT))
         {
+            TIDE_LOG_INFO(g_logger) << this << " stopped";
             m_stopping = true;
 
             if (stopping())
@@ -146,6 +149,7 @@ namespace tide
     void Scheduler::run()
     {
         TIDE_LOG_DEBUG(g_logger) << m_name << " run";
+        set_hook_enable(true);
         setThis();
         if (tide::GetThreadId() != m_rootThread)
         {

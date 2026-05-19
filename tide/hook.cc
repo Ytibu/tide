@@ -57,9 +57,7 @@ namespace tide
         {
             return;
         }
-        is_init = true;
-#define XX(name) \
-    name##_f = (name##_fun)dlsym(RTLD_NEXT, #name);
+#define XX(name) name##_f = (name##_fun)dlsym(RTLD_NEXT, #name);
         HOOK_FUN(XX);
 #undef XX
     }
@@ -134,11 +132,6 @@ namespace tide
         if (n == -1 && errno == EAGAIN)
         {
             tide::IOManager *iom = tide::IOManager::GetThis();
-            if (!iom)
-            {
-                errno = EAGAIN;
-                return -1;
-            }
             tide::Timer::ptr timer;
             std::weak_ptr<timer_info> winfo(tinfo);
 
@@ -169,10 +162,7 @@ namespace tide
                 tide::Fiber::YieldToHold();
                 if (timer)
                 {
-                    if (!timer->cancel())
-                    {
-                        TIDE_LOG_ERROR(g_logger) << hook_fun_name << " cancel timer failed";
-                    }
+                    timer->cancel();
                 }
                 if (tinfo->cancelled)
                 {
@@ -205,10 +195,9 @@ extern "C"
         tide::Fiber::ptr fiber = tide::Fiber::GetThis();
         tide::IOManager *iom = tide::IOManager::GetThis();
         std::weak_ptr<tide::Fiber> weak_fiber = fiber;
-        iom->addTimer(seconds * 1000, [iom, weak_fiber]()
-                      { 
-            auto f = weak_fiber.lock();
-            if (f) iom->schedule(f); });
+        iom->addTimer(seconds * 1000, std::bind((void(tide::IOManager::*)
+            (tide::Fiber::ptr, int thread))&tide::IOManager::schedule
+            ,iom, fiber, -1));
 
         tide::Fiber::YieldToHold();
         return 0;
@@ -223,8 +212,9 @@ extern "C"
 
         tide::Fiber::ptr fiber = tide::Fiber::GetThis();
         tide::IOManager *iom = tide::IOManager::GetThis();
-        iom->addTimer(usec / 1000, [iom, fiber]()
-                      { iom->schedule(fiber); });
+        iom->addTimer(usec / 1000, std::bind((void(tide::IOManager::*)
+            (tide::Fiber::ptr, int thread))&tide::IOManager::schedule
+            ,iom, fiber, -1));
         tide::Fiber::YieldToHold();
         return 0;
     }
@@ -239,8 +229,9 @@ extern "C"
         uint64_t timeout = req->tv_sec * 1000 + req->tv_nsec / 1000000;
         tide::Fiber::ptr fiber = tide::Fiber::GetThis();
         tide::IOManager *iom = tide::IOManager::GetThis();
-        iom->addTimer(timeout, [iom, fiber]()
-                      { iom->schedule(fiber); });
+        iom->addTimer(timeout, std::bind((void(tide::IOManager::*)(
+            tide::Fiber::ptr, int thread))&tide::IOManager::schedule
+            ,iom, fiber, -1));
         tide::Fiber::YieldToHold();
         return 0;
     }
@@ -261,7 +252,7 @@ extern "C"
         return fd;
     }
 
-    int connect_timeout(int sockfd, const struct sockaddr *addr, socklen_t addrlen, uint64_t timeout_ms)
+    int connect_with_timeout(int sockfd, const struct sockaddr *addr, socklen_t addrlen, uint64_t timeout_ms)
     {
         if(!tide::t_hook_enable){
             return connect_f(sockfd, addr, addrlen);
@@ -343,7 +334,7 @@ extern "C"
 
     int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     {
-        return connect_timeout(sockfd, addr, addrlen, tide::s_connect_timeout);
+        return connect_with_timeout(sockfd, addr, addrlen, tide::s_connect_timeout);
     }
 
     int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
@@ -484,7 +475,9 @@ extern "C"
         case F_SETSIG:
         case F_SETLEASE:
         case F_NOTIFY:
+#ifdef F_SETPIPE_SZ
         case F_SETPIPE_SZ:
+#endif
             {
                 int arg = va_arg(va, int);
                 va_end(va);
@@ -495,7 +488,9 @@ extern "C"
         case F_GETOWN:
         case F_GETSIG:
         case F_GETLEASE:
+#ifdef F_GETPIPE_SZ
         case F_GETPIPE_SZ:
+#endif
             {
                 va_end(va);
                 return fcntl_f(fd, cmd);

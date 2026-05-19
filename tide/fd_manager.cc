@@ -16,10 +16,7 @@ namespace tide
 
     FdCtx::~FdCtx()
     {
-        if (m_isInit)
-        {
-            close();
-        }
+        // FdCtx only tracks fd state; actual close is handled by hook/socket owners.
     }
 
 
@@ -65,13 +62,12 @@ namespace tide
     // 关闭文件描述符，并且更新状态
     bool FdCtx::close()
     {
-        // 标志位：如果没有初始化，或者已经关闭了，就直接返回
+        // FdCtx does not own the underlying fd lifecycle.
+        // Keep this API as a state transition to avoid double-close races.
         if (!m_isInit || m_isClosed)
         {
             return false;
         }
-
-        ::close(m_fd);
         m_isClosed = true;
         return m_isClosed;
     }

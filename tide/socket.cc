@@ -217,7 +217,7 @@ namespace tide
         }
         else
         {
-            if (::connect_timeout(m_sockfd, addr->getAddr(), addr->getAddrLen(), timeout_ms))
+            if (::connect_with_timeout(m_sockfd, addr->getAddr(), addr->getAddrLen(), timeout_ms))
             {
                 TIDE_LOG_ERROR(g_logger) << "connect timeout, errno=" << errno << " errstr=" << strerror(errno);
                 close();
@@ -370,9 +370,9 @@ namespace tide
         }
 
         socklen_t addrlen = result->getAddrLen();
-        if(::getsockname(m_sockfd, (sockaddr *)result->getAddr(), &addrlen))
+        if(getsockname(m_sockfd, result->getAddr(), &addrlen))
         {
-            TIDE_LOG_ERROR(g_logger) << "getsockname error, errno=" << errno << " errstr=" << strerror(errno);
+            TIDE_LOG_ERROR(g_logger) << "getsockname error, sockfd=" << m_sockfd << " errno=" << errno << " errstr=" << strerror(errno);
             return Address::ptr(new UnknownAddress(m_family));
         }
 
@@ -413,9 +413,9 @@ namespace tide
         }
 
         socklen_t addrlen = result->getAddrLen();
-        if(::getpeername(m_sockfd, (sockaddr *)result->getAddr(), &addrlen))
+        if(getpeername(m_sockfd, result->getAddr(), &addrlen))
         {
-            TIDE_LOG_ERROR(g_logger) << "getpeername error, errno=" << errno << " errstr=" << strerror(errno);
+            TIDE_LOG_ERROR(g_logger) << "getpeername error, sockfd=" << m_sockfd << " errno=" << errno << " errstr=" << strerror(errno);
             return Address::ptr(new UnknownAddress(m_family));
         }
 

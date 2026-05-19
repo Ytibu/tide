@@ -564,7 +564,7 @@ tide::is_hook_enable();        // 查询是否启用
 
 #### 超时 connect
 
-`connect_timeout(sockfd, addr, addrlen, timeout_ms)` — 非阻塞 connect + 定时器，支持连接超时。
+`connect_with_timeout(sockfd, addr, addrlen, timeout_ms)` — 非阻塞 connect + 定时器，支持连接超时。
 
 ---
 

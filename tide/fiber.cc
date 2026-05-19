@@ -201,7 +201,7 @@ namespace tide
     {
         Fiber::ptr cur = GetThis();
         TIDE_ASSERT(cur->m_state == EXEC);
-        cur->m_state = HOLD;
+        //cur->m_state = HOLD;
         cur->swapOut();
     }
 
