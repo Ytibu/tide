@@ -198,7 +198,7 @@ namespace tide
             return false;
         }
         freeifaddrs(results);
-        return !result.empty();
+        return true;
     }
     bool Address::GetInterfaceAddresses(std::vector<std::pair<Address::ptr, uint32_t>> &result, const std::string &iface, int family)
     {

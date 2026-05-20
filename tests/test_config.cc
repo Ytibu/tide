@@ -5,9 +5,11 @@
 #include "../tide/config.h"
 #include "../tide/log.h"
 #include "../tide/utils.h"
+#include "../tide/env.h"
 
 #include <iostream>
 
+#if 1
 tide::ConfigVar<int>::ptr g_int_value_config = tide::Config::Lookup("system.port", (int)111, "system port");
 tide::ConfigVar<float>::ptr g_int_valuex_config = tide::Config::Lookup("system.port1", (float)8080, "system port1");
 tide::ConfigVar<float>::ptr g_float_value_config = tide::Config::Lookup("system.value", (float)222.22f, "system value");
@@ -56,23 +58,23 @@ void test_config()
 {
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "before: " << g_int_value_config->getValue();
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "before: " << g_float_value_config->toString();
-#define XX(g_var, name, prefix)                                                   \
-    {                                                                             \
-        auto &v = g_var->getValue();                                              \
-        for (auto &i : v)                                                         \
-        {                                                                         \
+#define XX(g_var, name, prefix)                                                             \
+    {                                                                                       \
+        auto &v = g_var->getValue();                                                        \
+        for (auto &i : v)                                                                   \
+        {                                                                                   \
             TIDE_LOG_INFO(TIDE_LOG_ROOT()) << #prefix " " #name ": " << i;                  \
-        }                                                                         \
+        }                                                                                   \
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << #prefix " " #name " yaml: " << g_var->toString(); \
     }
 
-#define XX_M(g_var, name, prefix)                                                                  \
-    {                                                                                              \
-        auto &v = g_var->getValue();                                                               \
-        for (auto &i : v)                                                                          \
-        {                                                                                          \
+#define XX_M(g_var, name, prefix)                                                                            \
+    {                                                                                                        \
+        auto &v = g_var->getValue();                                                                         \
+        for (auto &i : v)                                                                                    \
+        {                                                                                                    \
             TIDE_LOG_INFO(TIDE_LOG_ROOT()) << #prefix " " #name ": {" << i.first << ": " << i.second << "}"; \
-        }                                                                                          \
+        }                                                                                                    \
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << #prefix " " #name " yaml: " << g_var->toString();                  \
     }
 
@@ -97,6 +99,7 @@ void test_config()
     XX_M(g_umap_value_config, str_int_umap, after);
 }
 
+#endif
 // 自定义类型
 class Person
 {
@@ -108,16 +111,14 @@ public:
     {
         std::stringstream ss;
         ss << "[Person name=" << m_name
-                  << " age=" << m_age
-                  << " sex=" << m_sex
+           << " age=" << m_age
+           << " sex=" << m_sex
            << "]";
         return ss.str();
     }
     bool operator==(const Person &other) const
     {
-        return m_name == other.m_name 
-            && m_age == other.m_age 
-            && m_sex == other.m_sex;
+        return m_name == other.m_name && m_age == other.m_age && m_sex == other.m_sex;
     }
 };
 
@@ -159,30 +160,30 @@ namespace tide
 
 } // end of namespace tide
 
-tide::ConfigVar<Person>::ptr g_person 
-    = tide::Config::Lookup("class.person", Person(), "system person");
-tide::ConfigVar<std::map<std::string, Person>>::ptr g_person_map 
-    = tide::Config::Lookup("class.map", std::map<std::string, Person>(), "system person");
-tide::ConfigVar<std::map<std::string, std::vector<Person>>>::ptr g_person_vec_map 
-    = tide::Config::Lookup("class.vec_map", std::map<std::string, std::vector<Person>>(), "system person");
+tide::ConfigVar<Person>::ptr g_person = tide::Config::Lookup("class.person", Person(), "system person");
+tide::ConfigVar<std::map<std::string, Person>>::ptr g_person_map = tide::Config::Lookup("class.map", std::map<std::string, Person>(), "system person");
+tide::ConfigVar<std::map<std::string, std::vector<Person>>>::ptr g_person_vec_map = tide::Config::Lookup("class.vec_map", std::map<std::string, std::vector<Person>>(), "system person");
+
+
 
 void test_class()
 {
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "before: " << g_person->getValue().toString() << " - " << g_person->toString();
 
-#define XX_PM(g_var, prefix) \
-    { \
-        auto m = g_person_map->getValue(); \
-        for(auto &i : m){ \
+#define XX_PM(g_var, prefix)                                                                             \
+    {                                                                                                    \
+        auto m = g_person_map->getValue();                                                               \
+        for (auto &i : m)                                                                                \
+        {                                                                                                \
             TIDE_LOG_INFO(TIDE_LOG_ROOT()) << prefix << ": " << i.first << " - " << i.second.toString(); \
-        } \
-        TIDE_LOG_INFO(TIDE_LOG_ROOT()) << prefix << ": size= " << m.size(); \
+        }                                                                                                \
+        TIDE_LOG_INFO(TIDE_LOG_ROOT()) << prefix << ": size= " << m.size();                              \
     }
 
-    g_person->addListener([](const Person& old_value, const Person& new_value){
+    g_person->addListener([](const Person &old_value, const Person &new_value)
+                          {
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "old_value=" << old_value.toString();
-        TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "new_value=" << new_value.toString();
-    });
+        TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "new_value=" << new_value.toString(); });
 
     XX_PM(g_person_map, "class.map before");
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "class.vec_map before: " << g_person_vec_map->toString();
@@ -195,7 +196,8 @@ void test_class()
     TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "class.vec_map after: " << g_person_vec_map->toString();
 }
 
-void test_log(){
+void test_log()
+{
     static tide::Logger::ptr system_log = TIDE_LOG_NAME("system");
     TIDE_LOG_INFO(system_log) << "hello system log" << std::endl;
 
@@ -209,17 +211,22 @@ void test_log(){
     TIDE_LOG_INFO(system_log) << "hello system log after config" << std::endl;
 
     system_log->setFormatter("%d%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
-     TIDE_LOG_INFO(system_log) << "hello system log after setFormatter" << std::endl;
+    TIDE_LOG_INFO(system_log) << "hello system log after setFormatter" << std::endl;
 }
 
-int main()
+void test_load_conf()
 {
-    // test_class();
-    test_log();
-
+    tide::Config::LoadFromConfDir("../conf");
+}
+int main(int argc, char **argv)
+{
+    tide::EnvMgr::GetInstance()->init(argc, argv);
+    test_load_conf();
+    std::cout << "=============================" << std::endl;
+    test_load_conf();
     tide::Config::Visit([](tide::ConfigVarBase::ptr var) {
         TIDE_LOG_INFO(TIDE_LOG_ROOT()) << "name=" << var->getName() << " description=" << var->getDescription()
-                                       << " typename=" << var->getTypeName() << " value=" << var->toString();
+             << " value=" << var->toString();
     });
     return 0;
 }

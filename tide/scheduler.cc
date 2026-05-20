@@ -249,6 +249,7 @@ namespace tide
                 }
                 if (idle_fiber->getState() == Fiber::TERM)
                 {
+                    TIDE_LOG_INFO(g_logger) << "idle fiber term";
                     break;
                 }
 

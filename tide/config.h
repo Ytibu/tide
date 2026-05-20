@@ -26,6 +26,13 @@ namespace tide
     {
     public:
         using ptr = std::shared_ptr<ConfigVarBase>;
+
+        /**
+         * @brief 构造函数，接受配置变量的名称和描述，并将名称转换为小写。
+         * 
+         * @param name 
+         * @param description 
+         */
         ConfigVarBase(const std::string &name, const std::string &description = "")
             : m_name(name), m_description(description) {
                 std::transform(m_name.begin(), m_name.end(), m_name.begin(), ::tolower);
@@ -65,14 +72,33 @@ namespace tide
         using ptr = std::shared_ptr<ConfigVar<T>>;
         using on_change_cb = std::function<void(const T &old_value, const T &new_value)>;
 
+        /**
+         * @brief 构造函数，接受配置变量的名称、默认值和描述，并将名称转换为小写。
+         * 
+         * @param name 
+         * @param default_value 
+         * @param description 
+         */
         ConfigVar(const std::string &name, const T &default_value, const std::string &description = "")
             : ConfigVarBase(name, description), m_value(default_value) {}
 
+        /**
+         * @brief 获取配置变量的值，使用读锁保护，并返回值的副本。
+         * 
+         * @return const T 
+         */
         const T getValue() 
         {
             RWMutexType::ReadLock lock(m_mutex);
             return m_value;
         }
+
+        /**
+         * @brief 设置配置变量的值，首先使用读锁检查新值是否与当前值相同，
+         * 如果不同，则调用所有注册的回调函数，并使用写锁更新值。
+         * 
+         * @param value 
+         */
         void setValue(const T &value)
         {
             {
@@ -92,8 +118,20 @@ namespace tide
             m_value = value;
         }
 
+        /**
+         * @brief 获取配置变量的类型名称，使用typeid操作符获取类型信息，并返回类型名称字符串。
+         * 
+         * @return std::string 
+         */
         std::string getTypeName() const override { return typeid(T).name(); }
 
+        /**
+         * @brief 添加一个监听器，当配置变量的值发生变化时，回调函数将被调用。
+         * 每个监听器都有一个唯一的ID，可以通过ID删除监听器。
+         * 
+         * @param cb 
+         * @return uint64_t 
+         */
         uint64_t addListener(on_change_cb cb)
         {
             static uint64_t s_fun_id = 0;
@@ -102,12 +140,24 @@ namespace tide
             m_cbs[s_fun_id] = cb;
             return s_fun_id;
         }
+
+        /**
+         * @brief 删除一个监听器，通过其唯一ID删除对应的回调函数。
+         * 
+         * @param key 
+         */
         void delListener(uint64_t key)
         {
             RWMutexType::WriteLock lock(m_mutex);
             m_cbs.erase(key);
         }
 
+        /**
+         * @brief 获取一个监听器，通过其唯一ID获取对应的回调函数，如果不存在则返回nullptr。
+         * 
+         * @param key 
+         * @return on_change_cb 
+         */
         on_change_cb getListener(uint64_t key)
         {
             RWMutexType::ReadLock lock(m_mutex);
@@ -115,12 +165,21 @@ namespace tide
             return it == m_cbs.end() ? nullptr : it->second;
         }
 
+        /**
+         * @brief 清除所有监听器，删除所有注册的回调函数。
+         * 
+         */
         void clearListener()
         {
             RWMutexType::WriteLock lock(m_mutex);
             m_cbs.clear();
         }
 
+        /**
+         * @brief 将配置变量的值转换为字符串，使用读锁保护，并调用ToStr函数对象进行转换。
+         * 
+         * @return std::string 
+         */
         std::string toString() override
         {
             try
@@ -135,6 +194,14 @@ namespace tide
             }
             return "";
         }
+
+        /**
+         * @brief 从字符串转换为配置变量的值，使用写锁保护，并调用FromStr函数对象进行转换。
+         * 
+         * @param val 
+         * @return true 
+         * @return false 
+         */
         bool fromString(const std::string &val) override
         {
             try
@@ -163,6 +230,16 @@ namespace tide
         using RWMutexType = RWMutex;
         using ConfigVarMap = std::map<std::string, ConfigVarBase::ptr>;
 
+        /**
+         * @brief 查找或创建一个配置变量，如果配置变量已经存在且类型匹配，则返回它；
+         * 如果配置变量不存在，则创建一个新的配置变量并返回它；如果配置变量存在但类型不匹配，则返回nullptr。
+         * 
+         * @tparam T 
+         * @param name 
+         * @param default_value 
+         * @param description 
+         * @return ConfigVar<T>::ptr 
+         */
         template <class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name, const T &default_value, const std::string &description = "")
         {
@@ -195,6 +272,13 @@ namespace tide
             return v;
         }
 
+        /**
+         * @brief 查找一个配置变量，如果配置变量存在且类型匹配，则返回它；否则返回nullptr。
+         * 
+         * @tparam T 
+         * @param name 
+         * @return ConfigVar<T>::ptr 
+         */
         template <class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name)
         {
@@ -207,20 +291,56 @@ namespace tide
             return std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
         }
 
+        /**
+         * @brief 从YAML节点加载配置，遍历YAML节点中的所有配置项，并将它们添加到配置管理器中。
+         * 
+         * @param root 
+         */
         static void LoadFromYaml(const YAML::Node &root);
+
+        /**
+         * @brief 从指定目录加载配置，
+         * 遍历目录中的所有YAML文件，并调用LoadFromYaml函数加载每个文件中的配置项。
+         * 
+         * @param path 
+         */
+        static void LoadFromConfDir(const std::string &path);
+
+        /**
+         * @brief 查找一个配置变量的基类指针，如果配置变量存在，则返回它的基类指针；否则返回nullptr。
+         * 
+         * @param name 
+         * @return ConfigVarBase::ptr 
+         */
         static ConfigVarBase::ptr LookupBase(const std::string &name);
 
+        /**
+         * @brief 遍历所有配置变量，调用回调函数cb对每个配置变量进行处理。
+         * 回调函数接受一个ConfigVarBase::ptr参数，表示当前遍历到的配置变量。
+         * 
+         * @param cb 
+         */
         static void Visit(std::function<void(ConfigVarBase::ptr)> cb);
 
-        
-
     private:
+        /**
+         * @brief 获取配置变量的映射表，
+         * 使用静态局部变量实现单例模式，确保全局只有一个配置变量映射表。
+         * 
+         * @return ConfigVarMap& 
+         */
         static ConfigVarMap &GetDatas()
         {
             static ConfigVarMap s_datas;
             return s_datas;
         }
 
+        /**
+         * @brief 获取配置变量映射表的读写锁，
+         * 使用静态局部变量实现单例模式，确保全局只有一个锁对象。
+         * 
+         * @return RWMutexType& 
+         */
         static RWMutexType& GetMutex()
         {
             static RWMutexType s_mutex;

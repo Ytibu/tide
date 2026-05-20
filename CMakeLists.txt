@@ -35,6 +35,9 @@ set(LIB_SRC
     tide/http/servlet.cc
     tide/tcp_server.cc
     tide/uri.cc
+    tide/daemon.cc
+    tide/env.cc
+    tide/application.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

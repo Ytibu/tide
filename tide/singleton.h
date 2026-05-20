@@ -1,6 +1,8 @@
 #ifndef TIDE_SINGLETON_H__
 #define TIDE_SINGLETON_H__
 
+#include <memory>
+
 namespace tide
 {
 
