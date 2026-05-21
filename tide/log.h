@@ -141,6 +141,7 @@ namespace tide
 
         LogFormatter(const std::string &pattern);
         std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+        std::ostream& format(std::ostream& ofs, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
 
     public:
         class FormatItem

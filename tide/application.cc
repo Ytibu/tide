@@ -16,13 +16,13 @@ namespace tide
 {
     static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
-    // 定义一个全局配置变量，用于指定服务器的工作目录，默认值为/home/tide/work，并提供描述信息
+    // 定义一个全局配置变量，用于指定服务器的工作目录，默认值为相对目录，便于不同环境部署
     static tide::ConfigVar<std::string>::ptr g_server_work_path =
-        tide::Config::Lookup<std::string>("server.work_path", "/home/dingjr/sourceCode/devSource/tide/conf", "server work path");
+        tide::Config::Lookup<std::string>("server.work_path", std::string("./work"), "server work path");
 
     // 定义一个全局配置变量，用于指定服务器的PID文件路径，默认值为tide.pid，并提供描述信息
     static tide::ConfigVar<std::string>::ptr g_server_pid_file =
-        tide::Config::Lookup<std::string>("server.pid_file", "tide.pid", "server pid file");
+        tide::Config::Lookup<std::string>("server.pid_file", std::string("tide.pid"), "server pid file");
 
     // 定义一个结构体，用于表示HTTP服务器的配置项，包括服务器监听的地址列表、连接保持活跃的标志、连接超时时间和服务器名称等字段
     struct HttpServerConfig
@@ -31,12 +31,23 @@ namespace tide
         int keepalive = 0;
         int timeout = 1000 * 2 * 60; // 连接超时时间，单位为毫秒，默认值为2分钟
         std::string name;
+        std::string cert_file;
+        std::string key_file;
+        std::string accept_worker;
+        std::string process_worker;
 
         bool isValid() const { return !address.empty(); }
 
         bool operator==(const HttpServerConfig &other) const
         {
-            return address == other.address && keepalive == other.keepalive && timeout == other.timeout && name == other.name;
+            return address == other.address
+             && keepalive == other.keepalive
+             && timeout == other.timeout
+             && name == other.name
+             && cert_file == other.cert_file
+             && key_file == other.key_file
+             && accept_worker == other.accept_worker
+             && process_worker == other.process_worker;
         }
     };
 
@@ -59,6 +70,11 @@ namespace tide
                     conf.address.push_back(node["address"][i].as<std::string>());
                 }
             }
+            conf.cert_file = node["cert_file"].as<std::string>(conf.cert_file);
+            conf.key_file = node["key_file"].as<std::string>(conf.key_file);
+            conf.accept_worker = node["accept_worker"].as<std::string>(conf.accept_worker);
+            conf.process_worker = node["process_worker"].as<std::string>(conf.process_worker);
+
             return conf;
         }
     };
@@ -78,6 +94,10 @@ namespace tide
             {
                 node["address"].push_back(conf.address[i]);
             }
+            node["cert_file"] = conf.cert_file;
+            node["key_file"] = conf.key_file;
+            node["accept_worker"] = conf.accept_worker;
+            node["process_worker"] = conf.process_worker;
             std::stringstream ss;
             ss << node;
             return ss.str();
@@ -86,7 +106,7 @@ namespace tide
 
     // 定义一个全局配置变量，用于指定HTTP服务器的配置列表，默认值为空列表，并提供描述信息
     static tide::ConfigVar<std::vector<HttpServerConfig>>::ptr g_http_server_conf =
-        tide::Config::Lookup("http_servers", std::vector<HttpServerConfig>(), "http server config");
+        tide::Config::Lookup("servers", std::vector<HttpServerConfig>(), "http server config");
 
     Application *Application::s_Instance = nullptr;
 
@@ -185,7 +205,8 @@ namespace tide
         auto http_confs = g_http_server_conf->getValue();
         for (auto i : http_confs)
         {
-            TIDE_LOG_INFO(g_logger) << "\n" << LexicalCast<HttpServerConfig, std::string>()(i);
+            TIDE_LOG_INFO(g_logger) << "\n"
+                    << LexicalCast<HttpServerConfig, std::string>()(i);
         }
 
         tide::IOManager iom(1);
@@ -199,6 +220,13 @@ namespace tide
     {
         // 从全局配置变量 g_http_server_conf 中获取 HTTP 服务器的配置列表，并为每个配置项创建一个 HTTP 服务器实例，绑定监听地址并启动服务器。
         auto http_confs = g_http_server_conf->getValue();
+        if (http_confs.empty())
+        {
+            TIDE_LOG_WARN(g_logger) << "no http_servers config, please config http_servers in path: "
+                    << tide::EnvMgr::GetInstance()->getAbsolutePath(tide::EnvMgr::GetInstance()->get("c", "conf"));
+            return -1;
+        }
+
         for (auto &i : http_confs)
         {
             std::vector<tide::Address::ptr> addrs;
@@ -243,6 +271,8 @@ namespace tide
                 {
                     TIDE_LOG_ERROR(g_logger) << "bind address fail: " << *x;
                 }
+                TIDE_LOG_INFO(g_logger) << "addrs: " << addrs.size() << " fail addrs: " << fails.size();
+                TIDE_LOG_INFO(g_logger) << "server start with pid: " << getpid();
                 exit(0);
             }
 
@@ -252,4 +282,5 @@ namespace tide
 
         return 0;
     }
+
 }

@@ -22,7 +22,7 @@ namespace tide
      * LogEvent 日志事件
      */
     LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char *func, const char *file,
-                       int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time, const std::string& threadName)
+                       int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time, const std::string &threadName)
         : m_func(func), m_file(file), m_line(line), m_elapse(elapse), m_threadId(threadId),
           m_fiberId(fiberId), m_time(time), m_threadName(threadName), m_level(level), m_logger(logger)
     {
@@ -127,6 +127,15 @@ namespace tide
             it->format(ss, logger, level, event);
         }
         return ss.str();
+    }
+
+    std::ostream &LogFormatter::format(std::ostream &ofs, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event)
+    {
+        for (auto &i : m_items)
+        {
+            i->format(ofs, logger, level, event);
+        }
+        return ofs;
     }
 
     /**
@@ -410,7 +419,8 @@ namespace tide
                 m_lastTime = now;
             }
             MutexType::Lock lock(m_mutex);
-            if (!(m_filestream << m_formatter->format(logger, level, event)))
+            // if (!(m_filestream << m_formatter->format(logger, level, event)))
+            if (!m_formatter->format(m_filestream, logger, level, event))
             {
                 std::cout << "error log to file " << m_fileName << std::endl;
             }
@@ -436,7 +446,6 @@ namespace tide
         : m_name(name), m_level(LogLevel::DEBUG)
     {
         m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%C:%T%f:%l%T%m%n"));
-
     }
 
     void Logger::addAppender(LogAppender::ptr appender)

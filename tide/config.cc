@@ -97,6 +97,11 @@ static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
             try
             {
                 YAML::Node root = YAML::LoadFile(i);
+                // {
+                //     std::stringstream ss;
+                //     ss << root;
+                //     TIDE_LOG_DEBUG(g_logger) << "Load ConfFile content file=" << i << " content: " << ss.str();
+                // }
                 LoadFromYaml(root);
                 TIDE_LOG_INFO(g_logger) << "Load ConfFile file=" << i << " success";
             }

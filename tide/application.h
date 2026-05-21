@@ -44,6 +44,16 @@ namespace tide
          */
         bool run();
 
+        /**
+         * @brief 获取服务器实例函数，接受一个字符串参数 type 和一个 TcpServer::ptr 类型的 vector 引用 server，
+         * 
+         * @param type 
+         * @param server 
+         * @return true 
+         * @return false 
+         */
+        bool getServer(const std::string& type, std::vector<tide::TcpServer::ptr>& server);
+
     private:
         /**
          * @brief 主函数，执行应用程序的主逻辑。

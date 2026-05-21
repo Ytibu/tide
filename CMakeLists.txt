@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(tide)
 
+include(GNUInstallDirs)
+
+option(TIDE_BUILD_TESTS "Build test executables under tests/" ON)
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/utils.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/libraries.cmake)
 tide_define_project_macros()
@@ -43,7 +47,19 @@ set(LIB_SRC
 add_library(tide SHARED ${LIB_SRC})
 tide_link_libraries(tide)
 
+install(TARGETS tide
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
+install(DIRECTORY tide/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tide
+    FILES_MATCHING PATTERN "*.h"
+)
+
+
+if(TIDE_BUILD_TESTS)
 # 自动查找 tests/ 目录下所有 .cc 文件，分别生成同名可执行文件
 file(GLOB TEST_SOURCES tests/*.cc)
 foreach(test_src ${TEST_SOURCES})
@@ -52,6 +68,7 @@ foreach(test_src ${TEST_SOURCES})
     add_dependencies(${test_name} tide)
     tide_link_executable(${test_name})
 endforeach()
+endif()
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

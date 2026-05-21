@@ -1,7 +1,6 @@
-    
 # Tide 项目简介
 
-# 🌊 Tide
+## 🌊 Tide
 
 > *不争先，争的是滔滔不绝。*
 
@@ -10,14 +9,13 @@ Tide 是一个面向 C++ 的服务器框架，让网络服务开发回归平静�
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![C++ Standard](https://img.shields.io/badge/C%2B%2B-11-blue.svg)](https://isocpp.org/)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey)]()
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey)]
 
 ---
 
 ## 📖 为什么叫 Tide？
 
 > *潮汐从不急躁，却从未缺席。*
-
 > 海水连接着每块陆地，却从不需要确认报文。
 
 去掉所有“聪明”的设计，只保留被潮水冲刷过千百遍后依然坚硬的石头，取名为 **Tide**。
@@ -27,10 +25,33 @@ Tide 是一个面向 C++ 的服务器框架，让网络服务开发回归平静�
 ## 🚀 快速开始
 
 ### 最简示例
+
 ```zsh
 # 编译
 mkdir build/  
 cmake -S . -B build && cmake --build build
+```
+
+### 一键生成、编译并安装
+
+```zsh
+./generate.sh
+```
+
+默认行为是：
+
+- 使用 `Unix Makefiles` 生成构建文件
+- 构建目录默认是 `./build`
+- 安装目录默认是 `./install`
+- 默认不编译 `tests/` 下的测试程序
+- 最后执行 `make install`
+
+常用参数：
+
+```zsh
+./generate.sh --clean --build-dir build_release --prefix install_release --build-type Release --jobs 8
+./generate.sh --with-tests
+./generate.sh --build-type Debug
 ```
 
 ## 设计模块

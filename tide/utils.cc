@@ -176,72 +176,84 @@ namespace tide
         closedir(dir);
     }
 
-    bool FSUtil::IsRunningPidfile(const std::string &pidfile)
+    static int __lstat(const char *file, struct stat *st = nullptr)
     {
-        if (access(pidfile.c_str(), F_OK) != 0)
+        struct stat lst;
+        int ret = lstat(file, &lst);
+        if (st)
         {
-            return false;
+            *st = lst;
         }
+        return ret;
+    }
 
-        FILE *fp = fopen(pidfile.c_str(), "r");
-        if (fp == nullptr)
+    static int __mkdir(const char *dirname)
+    {
+        if (access(dirname, F_OK) == 0)
         {
-            return false;
+            return 0;
         }
+        return mkdir(dirname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
 
-        pid_t pid;
-        if (fscanf(fp, "%d", &pid) != 1)
+    bool FSUtil::Mkdir(const std::string &dirname)
+    {
+        if (__lstat(dirname.c_str()) == 0)
         {
-            fclose(fp);
-            return false;
+            return true;
         }
-        fclose(fp);
-
-        // 检查进程是否存在
-        if (kill(pid, 0) == 0)
+        char *path = strdup(dirname.c_str());
+        char *ptr = strchr(path + 1, '/');
+        do
         {
-            return true; // 进程存在，可以发送信号
-        }
-
-        // kill 返回 -1，检查错误码
-        if (errno == EPERM)
-        {
-            return true; // 进程存在，只是没有权限发送信号
-        }
-
-        // ESRCH 表示进程不存在
-        // 其他错误码（如 EINVAL）理论上不应该出现，但为了安全也返回 false
+            for (; ptr; *ptr = '/', ptr = strchr(ptr + 1, '/'))
+            {
+                *ptr = '\0';
+                if (__mkdir(path) != 0)
+                {
+                    break;
+                }
+            }
+            if (ptr != nullptr)
+            {
+                break;
+            }
+            else if (__mkdir(path) != 0)
+            {
+                break;
+            }
+            free(path);
+            return true;
+        } while (0);
+        free(path);
         return false;
     }
 
-    bool FSUtil::Mkdir(const std::string &path)
+    bool FSUtil::IsRunningPidfile(const std::string &pidfile)
     {
-        if (path.empty())
+        if (__lstat(pidfile.c_str()) != 0)
         {
             return false;
         }
-
-        struct stat st;
-        if (stat(path.c_str(), &st) == 0)
-        {
-            return S_ISDIR(st.st_mode);
-        }
-
-        size_t pos = path.find_last_of('/');
-        if (pos != std::string::npos && pos != 0)
-        {
-            std::string parent = path.substr(0, pos);
-            if (!Mkdir(parent)) // 递归创建父目录
-            {
-                return false;
-            }
-        }
-
-        if (mkdir(path.c_str(), 0755) != 0)
+        std::ifstream ifs(pidfile);
+        std::string line;
+        if (!ifs || !std::getline(ifs, line))
         {
             return false;
         }
-
+        if (line.empty())
+        {
+            return false;
+        }
+        pid_t pid = atoi(line.c_str());
+        if (pid <= 1)
+        {
+            return false;
+        }
+        if (kill(pid, 0) != 0)
+        {
+            return false;
+        }
         return true;
     }
 

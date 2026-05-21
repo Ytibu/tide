@@ -4,9 +4,11 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-#include <time.h>
 
+#include <time.h>
 #include <sys/types.h>
+
+#include "../tide/util/hash_util.h"
 
 namespace tide
 {
@@ -36,8 +38,22 @@ namespace tide
          */
         static void ListAllFile(std::vector<std::string>& files, const std::string& path, const std::string& subfix);
 
+        /**
+         * @brief 判断pidfile是否存在，并且进程是否在运行
+         * 
+         * @param pidfile 
+         * @return true 
+         * @return false 
+         */
         static bool IsRunningPidfile(const std::string& pidfile);
 
+        /**
+         * @brief 创建目录
+         * 
+         * @param path 
+         * @return true 
+         * @return false 
+         */
         static bool Mkdir(const std::string& path);
     };
 
