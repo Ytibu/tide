@@ -10,7 +10,7 @@
 
 namespace chat {
 
-static tide::Logger::ptr g_logger = SYLAR_LOG_ROOT();
+static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
 MyModule::MyModule()
     :tide::Module("chat_room", "1.0", "") {

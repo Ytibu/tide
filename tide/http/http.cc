@@ -56,8 +56,15 @@ namespace tide
             : m_method(HttpMethod::HTTP_GET)
             , m_version(version)
             , m_close(close)
+            , m_websocket(false)
             , m_path("/")
         {
+        }
+
+        std::shared_ptr<HttpResponse> HttpRequest::createResponse() const
+        {
+            HttpResponse::ptr rsp(new HttpResponse(getVersion(), isClose()));
+            return rsp;
         }
 
 
@@ -135,12 +142,14 @@ namespace tide
                << "." 
                << (m_version & 0x0F) 
                << "\r\n";
-
-            os << "connection: " << (m_close ? "close" : "keep-alive") << "\r\n";
+            if(!m_websocket)
+            {
+                os << "connection: " << (m_close ? "close" : "keep-alive") << "\r\n";
+            }
             
             for (auto &header : m_headers)
             {
-                if(strcasecmp(header.first.c_str(), "connection") == 0){
+                if(!m_websocket && strcasecmp(header.first.c_str(), "connection") == 0){
                     continue;
                 }
                 os << header.first << ": " << header.second << "\r\n";
@@ -168,6 +177,7 @@ namespace tide
         : m_status(HttpStatus::HTTP_STATUS_OK)
         , m_version(version)
         , m_close(close)
+        , m_websocket(false)
         {
         }
 
@@ -194,13 +204,16 @@ namespace tide
             
             for (auto &header : m_headers)
             {
-                if(strcasecmp(header.first.c_str(), "connection") == 0){
+                if(!m_websocket && strcasecmp(header.first.c_str(), "connection") == 0){
                     continue;
                 }
                 os << header.first << ": " << header.second << "\r\n";
             }
 
-            os << "connection: " << (m_close ? "close" : "keep-alive") << "\r\n";
+            if(!m_websocket)
+            {
+                os << "connection: " << (m_close ? "close" : "keep-alive") << "\r\n";
+            }
 
             if(!m_body.empty()){
                 os << "content-length: " << m_body.size() << "\r\n\r\n" << m_body;

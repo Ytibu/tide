@@ -183,11 +183,12 @@ namespace tide
                     }
 
                     ft = *it;
-                    m_fibers.erase(it);
+                    m_fibers.erase(it++);
                     ++m_activeThreadCount;
                     is_active = true;
                     break;
                 }
+                tickle_me |= (it != m_fibers.end());
             }
 
             if (tickle_me)

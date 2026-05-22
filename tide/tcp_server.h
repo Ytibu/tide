@@ -35,7 +35,7 @@ namespace tide
          * @return true 
          * @return false 
          */
-        virtual bool bind(tide::Address::ptr addr);
+        virtual bool bind(tide::Address::ptr addr, bool ssl = false);
 
         /**
          * @brief 绑定多个地址
@@ -45,7 +45,7 @@ namespace tide
          * @return true 
          * @return false 
          */
-        virtual bool bind(const std::vector<tide::Address::ptr>& addrs, std::vector<tide::Address::ptr>& fails);
+        virtual bool bind(const std::vector<tide::Address::ptr>& addrs, std::vector<tide::Address::ptr>& fails, bool ssl = false);
         
         /**
          * @brief 启动服务器，开始接受客户端连接并处理请求。

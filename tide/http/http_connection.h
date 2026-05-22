@@ -38,13 +38,19 @@ namespace tide
              */
             enum class Error
             {
-                OK = 0,
+                OK = 0, // 请求成功
                 INVALID_URL = -1,
                 INVALID_HOST = -2,
                 CONNECT_FAIL = -3,
                 SEND_FAIL = -4,
                 RECV_FAIL = -5,
                 PARSE_RESPONSE_FAIL = -6,
+                SEND_CLOSE_BY_PEER = 4,
+                SEND_SOCKET_ERROR = 5,
+                TIMOUT = 6,
+                CREATE_SOCKET_ERROR = 7,
+                POOL_GET_CONNECTION = 8,
+                POOL_INVALID_CONNECTION = 9,
                 UNKNOWN = -100,
             };
 

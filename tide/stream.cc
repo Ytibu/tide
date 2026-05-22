@@ -7,11 +7,11 @@ namespace tide
     }
     int Stream::readFixSize(void *buffer, size_t length)
     {
-        size_t left = length;
+        int64_t left = length;
         char *buf = (char *)buffer;
         while (left > 0)
         {
-            int len = read(buf, left);
+            int64_t len = read(buf, left);
             if (len <= 0)
             {
                 return len;
@@ -23,10 +23,10 @@ namespace tide
     }
     int Stream::readFixSize(ByteArray::ptr ba, size_t length)
     {
-        size_t left = length;
+        int64_t left = length;
         while (left > 0)
         {
-            int len = read(ba, left);
+            int64_t len = read(ba, left);
             if (len <= 0)
             {
                 return len;
@@ -37,11 +37,11 @@ namespace tide
     }
     int Stream::writeFixSize(const void *buffer, size_t length)
     {
-        size_t left = length;
+        int64_t left = length;
         const char *buf = (const char *)buffer;
         while (left > 0)
         {
-            int len = write(buf, left);
+            int64_t len = write(buf, left);
             if (len <= 0)
             {
                 return len;
@@ -53,10 +53,10 @@ namespace tide
     }
     int Stream::writeFixSize(ByteArray::ptr ba, size_t length)
     {
-        size_t left = length;
+        int64_t left = length;
         while (left > 0)
         {
-            int len = write(ba, left);
+            int64_t len = write(ba, left);
             if (len <= 0)
             {
                 return len;

@@ -269,6 +269,7 @@ namespace tide
             return default_value;
         }
 
+        class HttpResponse;
         class HttpRequest
         {
         public:
@@ -277,14 +278,18 @@ namespace tide
 
             /**
              * @brief 构造函数，默认 HTTP 版本为 1.1，连接默认保持close状态
-             * 
-             * @param version 
-             * @param close 
+             *
+             * @param version
+             * @param close
              */
             HttpRequest(uint8_t version = 0x11, bool close = true);
 
+            std::shared_ptr<HttpResponse> createResponse() const;
+
             bool isClose() const { return m_close; }
             void setClose(bool close) { m_close = close; }
+            bool isWebsocket() const { return m_websocket; }
+            void setWebsocket(bool websocket) { m_websocket = websocket; }
 
             HttpMethod getMethod() const { return m_method; }
             uint8_t getVersion() const { return m_version; }
@@ -326,26 +331,91 @@ namespace tide
             bool hasParameter(const std::string &key, std::string *value = nullptr) const;
             bool hasCookie(const std::string &key, std::string *value = nullptr) const;
 
+            /**
+             * @brief 检查并获取 HTTP 头部字段的值，并转换为指定类型，如果键不存在或转换失败则返回 false，并将 value 设置为默认值
+             * 
+             * @tparam T 
+             * @param key 
+             * @param value 
+             * @param default_value 
+             * @return true 
+             * @return false 
+             */
             template <typename T>
             bool checkGetHeaderAs(const std::string &key, T &value, const T &default_value = T()) const
             {
                 return CheckgetAs(m_headers, key, value, default_value);
             }
+            /**
+             * @brief 获取 HTTP 头部字段的值，并转换为指定类型，如果键不存在或转换失败则返回默认值
+             * 
+             * @tparam T 
+             * @param key 
+             * @param default_value 
+             * @return T 
+             */
             template <typename T>
             T getHeaderAs(const std::string &key, const T &default_value = T()) const
             {
                 return getAs(m_headers, key, default_value);
             }
 
+            /**
+             * @brief 检查并获取 URL 参数的值，并转换为指定类型，如果键不存在或转换失败则返回 false，并将 value 设置为默认值
+             * 
+             * @tparam T 
+             * @param key 
+             * @param value 
+             * @param default_value 
+             * @return true 
+             * @return false 
+             */
             template <typename T>
             bool checkGetParameterAs(const std::string &key, T &value, const T &default_value = T()) const
             {
                 return CheckgetAs(m_parameters, key, value, default_value);
             }
+            /**
+             * @brief 获取 URL 参数的值，并转换为指定类型，如果键不存在或转换失败则返回默认值
+             * 
+             * @tparam T 
+             * @param key 
+             * @param default_value 
+             * @return T 
+             */
             template <typename T>
             T getParameterAs(const std::string &key, const T &default_value = T()) const
             {
                 return getAs(m_parameters, key, default_value);
+            }
+
+            /**
+             * @brief 检查并获取 Cookie 的值，并转换为指定类型，如果键不存在或转换失败则返回 false，并将 value 设置为默认值
+             * 
+             * @tparam T 
+             * @param key 
+             * @param value 
+             * @param default_value 
+             * @return true 
+             * @return false 
+             */
+            template <typename T>
+            bool checkGetCookieAs(const std::string &key, T &value, const T &default_value = T()) const
+            {
+                return CheckgetAs(m_cookies, key, value, default_value);
+            }
+            /**
+             * @brief 获取 Cookie 的值，并转换为指定类型，如果键不存在或转换失败则返回默认值
+             * 
+             * @tparam T 
+             * @param key 
+             * @param default_value 
+             * @return T 
+             */
+            template <typename T>
+            T getCookieAs(const std::string &key, const T &default_value = T()) const
+            {
+                return getAs(m_cookies, key, default_value);
             }
 
             std::string toString() const;
@@ -355,7 +425,7 @@ namespace tide
             HttpMethod m_method;
             uint8_t m_version;
             bool m_close;
-
+            bool m_websocket;
             std::string m_path;
             std::string m_query;
             std::string m_fragment;
@@ -387,6 +457,8 @@ namespace tide
 
             bool isClose() const { return m_close; }
             void setClose(bool close) { m_close = close; }
+            bool isWebsocket() const { return m_websocket; }
+            void setWebsocket(bool websocket) { m_websocket = websocket; }
 
             void setHeader(const std::string &key, const std::string &value) { m_headers[key] = value; }
             void delHeader(const std::string &key) { m_headers.erase(key); }
@@ -410,6 +482,7 @@ namespace tide
             HttpStatus m_status;
             uint8_t m_version;
             bool m_close;
+            bool m_websocket;
             std::string m_body;
             std::string m_reason;
             MapType m_headers;

@@ -236,7 +236,7 @@ namespace tide
 
     void IOManager::tickle()
     {
-        if (hasIdleThreads())
+        if (!hasIdleThreads())
         {
             return;
         }
@@ -258,7 +258,8 @@ namespace tide
     }
     void IOManager::idle()
     {
-        epoll_event *events = new epoll_event[64]();
+        const uint64_t MAX_EVENTS = 256;
+        epoll_event *events = new epoll_event[MAX_EVENTS]();
         std::shared_ptr<epoll_event> shared_events(events, [](epoll_event *ptr)
                                                    { delete[] ptr; });
 
@@ -285,7 +286,7 @@ namespace tide
                 {
                     next_timeout = MAX_TIMEOUT;
                 }
-                rt = epoll_wait(m_epfd, events, 64, (int)next_timeout);
+                rt = epoll_wait(m_epfd, events, MAX_EVENTS, (int)next_timeout);
                 if (rt < 0 && errno == EINTR)
                 {
                 }
@@ -308,8 +309,8 @@ namespace tide
                 epoll_event &event = events[i];
                 if (event.data.fd == m_tickleFds[0])
                 {
-                    uint8_t dummy;
-                    while (read(m_tickleFds[0], &dummy, 1) == 1)
+                    uint8_t dummy[256];
+                    while (read(m_tickleFds[0], &dummy, sizeof(dummy)) > 0)
                         ;
                     continue;
                 }
@@ -348,12 +349,12 @@ namespace tide
                     continue;
                 }
 
-                if (real_events & READ)
+                if (fd_ctx->m_events & READ)
                 {
                     fd_ctx->triggerEvent(READ);
                     --m_pendingEventCount;
                 }
-                if (real_events & WRITE)
+                if (fd_ctx->m_events & WRITE)
                 {
                     fd_ctx->triggerEvent(WRITE);
                     --m_pendingEventCount;

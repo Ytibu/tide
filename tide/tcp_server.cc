@@ -22,15 +22,15 @@ namespace tide
 
     }
 
-    bool TcpServer::bind(tide::Address::ptr addr)
+    bool TcpServer::bind(tide::Address::ptr addr, bool ssl)
     {
         std::vector<tide::Address::ptr> addrs;
         addrs.push_back(addr);
         std::vector<tide::Address::ptr> fails;
-        return bind(addrs, fails);
+        return bind(addrs, fails, ssl);
     }
 
-    bool TcpServer::bind(const std::vector<tide::Address::ptr>& addrs, std::vector<tide::Address::ptr>& fails)
+    bool TcpServer::bind(const std::vector<tide::Address::ptr>& addrs, std::vector<tide::Address::ptr>& fails, bool ssl)
     {
         fails.clear();
         for(auto &addr : addrs)
