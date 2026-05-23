@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "env.h"
+#include "library.h"
 
 namespace tide
 {
@@ -110,7 +111,7 @@ namespace tide
 
     void ModuleManager::initModule(const std::string &path)
     {
-        Module::ptr m = std::make_shared<Module>(path);
+        Module::ptr m = Library::GetModule(path);
         if (m)
         {
             add(m);

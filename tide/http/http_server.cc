@@ -16,6 +16,7 @@ namespace tide
             : TcpServer(worker, accept_worker), m_isKeepalive(keepalive)
         {
             m_dispatch.reset(new ServletDispatch);
+            m_type = "http";
         }
 
         // 处理客户端请求，步骤：创建 HttpSession 对象，接收 HTTP 请求，处理 HTTP 请求，发送 HTTP 响应，关闭 HttpSession 对象

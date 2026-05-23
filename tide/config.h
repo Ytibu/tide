@@ -207,14 +207,13 @@ namespace tide
             try
             {
                 setValue(FromStr()(val));
-                return true;
             }
             catch (const std::exception &e)
             {
                 TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ConfigVar::fromString exception: "
                                                 << e.what() << " convert: " << typeid(m_value).name() << " to string" << " name=" << m_name << " value=" << val;
             }
-               return false;
+            return false;
         }
 
     private:
@@ -304,7 +303,7 @@ namespace tide
          * 
          * @param path 
          */
-        static void LoadFromConfDir(const std::string &path);
+        static void LoadFromConfDir(const std::string &path, bool force = false);
 
         /**
          * @brief 查找一个配置变量的基类指针，如果配置变量存在，则返回它的基类指针；否则返回nullptr。
@@ -376,7 +375,8 @@ namespace tide
     public:
         std::string operator()(const std::vector<T> &v)
         {
-            YAML::Node node;
+            // YAML::Node node;
+            YAML::Node node(YAML::NodeType::Sequence);
             for (auto &i : v)
             {
                 node.push_back(YAML::Load(LexicalCast<T, std::string>()(i)));
@@ -412,7 +412,7 @@ namespace tide
     public:
         std::string operator()(const std::list<T> &v)
         {
-            YAML::Node node;
+            YAML::Node node(YAML::NodeType::Sequence);
             for (auto &i : v)
             {
                 node.push_back(YAML::Load(LexicalCast<T, std::string>()(i)));
@@ -448,7 +448,7 @@ namespace tide
     public:
         std::string operator()(const std::set<T> &v)
         {
-            YAML::Node node;
+            YAML::Node node(YAML::NodeType::Sequence);
             for (auto &i : v)
             {
                 node.push_back(YAML::Load(LexicalCast<T, std::string>()(i)));
@@ -484,7 +484,7 @@ namespace tide
     public:
         std::string operator()(const std::unordered_set<T> &v)
         {
-            YAML::Node node;
+            YAML::Node node(YAML::NodeType::Sequence);
             for (auto &i : v)
             {
                 node.push_back(YAML::Load(LexicalCast<T, std::string>()(i)));
@@ -520,7 +520,7 @@ namespace tide
     public:
         std::string operator()(const std::map<std::string, T> &v)
         {
-            YAML::Node node;
+            YAML::Node node(YAML::NodeType::Sequence);
             for (auto &i : v)
             {
                 node.push_back(YAML::Load(LexicalCast<T, std::string>()(i.second)));
@@ -556,7 +556,7 @@ namespace tide
     public:
         std::string operator()(const std::unordered_map<std::string, T> &v)
         {
-            YAML::Node node;
+            YAML::Node node(YAML::NodeType::Sequence);
             for (auto &i : v)
             {
                 node.push_back(YAML::Load(LexicalCast<T, std::string>()(i.second)));

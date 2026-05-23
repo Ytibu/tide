@@ -13,6 +13,7 @@ macro(tide_setup_libraries)
         OpenSSL::SSL
         OpenSSL::Crypto
         pthread
+        jsoncpp
     )
 endmacro()
 

@@ -14,42 +14,47 @@ tide_setup_libraries()
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(LIB_SRC
-    tide/mutex.cc
+    tide/scheduler.cc
     tide/worker.cc
-    tide/log.cc
+    tide/socket_stream.cc
     tide/utils.cc
     tide/config.cc
-    tide/thread.cc
-    tide/fiber.cc
-    tide/scheduler.cc
-    tide/iomanager.cc
+    tide/mutex.cc
     tide/timer.cc
-    tide/hook.cc
-    tide/fd_manager.cc
     tide/address.cc
-    tide/socket.cc
-    tide/bytearray.cc
-    tide/stream.cc
-    tide/socket_stream.cc
-    tide/http/http11/http11_parser.c
+    tide/library.cc
+    tide/log.cc
+	tide/http/http11/http11_parser.c
+    tide/http/http11/http11_parser.rl
     tide/http/http11/httpclient_parser.c
-    tide/http/http.cc
+	tide/http/http.cc
     tide/http/http_parser.cc
+    tide/http/http_server.cc
     tide/http/http_connection.cc
     tide/http/http_session.cc
-    tide/http/http_server.cc
-    tide/http/servlet.cc
+	tide/http/servlet.cc
     tide/http/ws_connection.cc
-    tide/http/ws_session.cc
     tide/http/ws_server.cc
+    tide/http/ws_session.cc
     tide/http/ws_servlet.cc
-    tide/tcp_server.cc
     tide/util/hash_util.cc
-    tide/uri.cc
-    tide/daemon.cc
-    tide/env.cc
+    tide/util/json_util.cc
+    tide/thread.cc
+    tide/socket.cc
+    tide/fiber.cc
     tide/application.cc
-
+    tide/daemon.cc
+    tide/uri.cc
+    tide/env.cc
+    tide/iomanager.cc
+    tide/stream.cc
+    tide/fd_manager.cc
+    tide/tcp_server.cc
+    tide/hook.cc
+    tide/module.cc
+    tide/bytearray.cc
+    tide/library.cc
+    # tide/my_module.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

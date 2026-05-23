@@ -17,6 +17,11 @@ namespace tide
     {
     }
 
+    void TcpServer::setConf(const TcpServerConf &v)
+    {
+        m_conf.reset(new TcpServerConf(v));
+    }
+
     bool TcpServer::bind(tide::Address::ptr addr, bool ssl)
     {
         std::vector<tide::Address::ptr> addrs;
@@ -27,7 +32,7 @@ namespace tide
 
     bool TcpServer::bind(const std::vector<tide::Address::ptr> &addrs, std::vector<tide::Address::ptr> &fails, bool ssl)
     {
-        fails.clear();
+        m_ssl = ssl;
         for (auto &addr : addrs)
         {
             Socket::ptr sock = ssl ? SSLSocket::CreateTCP(addr) : Socket::CreateTCP(addr);
@@ -54,7 +59,7 @@ namespace tide
 
         for (auto &sock : m_socks)
         {
-            TIDE_LOG_INFO(g_logger) << "bind tcp server success, addr=" << sock->getLocalAddress()->toString();
+            TIDE_LOG_INFO(g_logger) << "type= " << m_type << " name= " << m_name << " ssl=" << m_ssl << " bind success: " << *sock;
         }
 
         return true;

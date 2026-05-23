@@ -7,7 +7,7 @@
 namespace tide
 {
 
-static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
+    static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
     // 根据配置名称查找并返回对应的配置变量基类指针。
     ConfigVarBase::ptr Config::LookupBase(const std::string &name)
@@ -75,7 +75,7 @@ static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
     static tide::Mutex s_mutex;
 
     // 从指定目录加载配置，遍历目录中的所有 YAML 文件，并调用 LoadFromYaml 函数加载每个文件中的配置项。
-    void Config::LoadFromConfDir(const std::string &path)
+    void Config::LoadFromConfDir(const std::string &path, bool force)
     {
         std::string absolute_path = EnvMgr::GetInstance()->getAbsolutePath(path);
 
@@ -88,7 +88,7 @@ static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
             lstat(i.c_str(), &st);
             {
                 tide::Mutex::Lock lock(s_mutex);
-                if (s_file2modifytime[i] == (uint64_t)st.st_mtime)
+                if (s_file2modifytime[i] == (uint64_t)st.st_mtime && !force)
                 {
                     continue;
                 }
@@ -121,5 +121,10 @@ static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
         {
             cb(it->second);
         }
+    }
+
+    std::string Env::getConfigPath()
+    {
+        return getAbsolutePath(get("c", "conf"));
     }
 }

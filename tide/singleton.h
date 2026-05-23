@@ -31,7 +31,9 @@ namespace tide
     public:
         static T *GetInstance()
         {
-            return &GetInstanceX<T, X, N>();
+            // return &GetInstanceX<T, X, N>();
+            static T v;
+            return &v;
         }
     };
 
@@ -41,7 +43,9 @@ namespace tide
     public:
         static std::shared_ptr<T> GetInstance()
         {
-            return GetInstancePtr<T, X, N>();
+            // return GetInstancePtr<T, X, N>();
+            static std::shared_ptr<T> v(new T);
+            return v;
         }
     };
 
