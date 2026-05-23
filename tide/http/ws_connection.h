@@ -12,6 +12,7 @@ namespace tide
     {
         class WSConnection : public HttpConnection
         {
+        public:
             using ptr = std::shared_ptr<WSConnection>;
             WSConnection(Socket::ptr sock, bool owner = true);
             static std::pair<HttpResult::ptr, WSConnection::ptr> Create(const std::string &url, uint64_t timeout_ms, const std::map<std::string, std::string> &headers = {});

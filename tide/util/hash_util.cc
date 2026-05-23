@@ -1,8 +1,11 @@
 #include "hash_util.h"
 
+
+#include <utility>
 #include <algorithm>
 #include <stdexcept>
 #include <string.h>
+#define OPENSSL_SUPPRESS_DEPRECATED
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 
@@ -515,7 +518,8 @@ std::vector<std::string> split(const std::string &str, char delim, size_t max) {
         pos = str.find(delim, last);
     }
     result.push_back(str.substr(last));
-    return std::move(result);
+    // return std::move(result);
+    return result;
 }
 
 std::vector<std::string> split(const std::string &str, const char *delims, size_t max) {
@@ -534,7 +538,8 @@ std::vector<std::string> split(const std::string &str, const char *delims, size_
         pos = str.find_first_of(delims, last);
     }
     result.push_back(str.substr(last));
-    return std::move(result);
+    // return std::move(result);
+    return result;
 }
 
 std::string random_string(size_t len) {

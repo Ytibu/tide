@@ -14,7 +14,7 @@ namespace tide
             Uri::ptr uri = Uri::Create(url);
             if (!uri)
             {
-                return {std::make_shared<HttpResult>(HttpResult::Error::INVALID_URL, nullptr, "invalid url: " + url), nullptr};
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::INVALID_URL, nullptr, "invalid url:" + url), nullptr);
             }
             return Create(uri, timeout_ms, headers);
         }
@@ -23,16 +23,16 @@ namespace tide
         {
             Address::ptr addr = uri->createAddress();
             if (!addr){
-                return {std::make_shared<HttpResult>(HttpResult::Error::INVALID_HOST, nullptr, "invalid host: " + uri->getHost()), nullptr};
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::INVALID_HOST, nullptr, "invalid host: " + uri->getHost()), nullptr);
             }
 
             Socket::ptr sock = Socket::CreateTCP(addr);
             if (!sock){
-                return {std::make_shared<HttpResult>(HttpResult::Error::CONNECT_FAIL, nullptr, "create socket fail: " + uri->getHost()), nullptr};
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::CONNECT_FAIL, nullptr, "create socket fail: " + uri->getHost()), nullptr);
             }
 
             if(!sock->connect(addr)){
-                return {std::make_shared<HttpResult>(HttpResult::Error::CONNECT_FAIL, nullptr, "connect fail: " + uri->getHost()), nullptr};
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::CONNECT_FAIL, nullptr, "connect fail: " + uri->getHost()), nullptr);
             }
 
             sock->setRecvTimeout(timeout_ms);
@@ -70,30 +70,38 @@ namespace tide
 
             int rt = conn->sendRequest(req);
             if(rt == 0){
-                return std::make_pair(std::make_shared<HttpResult>(HttpResult::Error::OK, nullptr, "ok"), conn);
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::SEND_CLOSE_BY_PEER, nullptr, "send close by peer: " + addr->toString()), nullptr);
+            }else if(rt < 0){
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::SEND_SOCKET_ERROR, nullptr, "send socket error: " + addr->toString()), nullptr);
             }
+
+            auto rsp = conn->recvResponse();
+            if(!rsp){
+                return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::TIMOUT, nullptr, "recv response timeout: " + addr->toString()), nullptr);
+            }
+            return std::make_pair(std::make_shared<HttpResult>((int)HttpResult::Error::OK, rsp, "ok"), conn);
 
         }
 
         WSFrameMessage::ptr WSConnection::recvMessage()
         {
-
+            return WSRecvMessage(this, true);
         }
         int32_t WSConnection::sendMessage(WSFrameMessage::ptr msg, bool fin)
         {
-
+            return WSSendMessage(this, msg, true, fin);
         }
-        int32_t WSConnection::sendMessage(const std::string &msg, int opcode = WSFrameHeader::TEXT_FRAME, bool fin = true)
+        int32_t WSConnection::sendMessage(const std::string &msg, int opcode, bool fin)
         {
-            return 0;
+            return WSSendMessage(this, std::make_shared<WSFrameMessage>(opcode, msg), true, fin);
         }
         int32_t WSConnection::ping()
         {
-            return 0;
+            return WSPing(this);
         }
         int32_t WSConnection::pong()
         {
-            return 0;
+            return WSPong(this);
         }
     }
 }

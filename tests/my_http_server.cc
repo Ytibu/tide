@@ -4,6 +4,7 @@
 
 tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
+tide::IOManager::ptr worker;
 void run()
 {
 	g_logger->setLevel(tide::LogLevel::INFO);
@@ -13,7 +14,7 @@ void run()
 		TIDE_LOG_ERROR(g_logger) << "get address error";
 		return;
 	}
-	tide::http::HttpServer::ptr http_server(new tide::http::HttpServer);
+	tide::http::HttpServer::ptr http_server(new tide::http::HttpServer(true, worker.get()));
 	if(!http_server->bind(addr))
 	{
 		TIDE_LOG_ERROR(g_logger) << "bind " << *addr << " fail";
@@ -28,6 +29,7 @@ void run()
 int main()
 {
 	tide::IOManager iom(1);
+	worker.reset(new tide::IOManager(4,false));
 	iom.schedule(run);
 
 	return 0;

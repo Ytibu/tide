@@ -88,7 +88,7 @@ namespace tide
             {
                 TIDE_LOG_INFO(g_logger) << *req;
             }
-            // return false;
+            return nullptr;
         }
 
         WSFrameMessage::ptr WSSession::recvMessage()
@@ -99,7 +99,7 @@ namespace tide
         {
             return WSSendMessage(this, msg, false, final);
         }
-        int32_t WSSession::sendMessage(const std::string &msg, int32_t opcode = WSFrameHeader::TEXT_FRAME, bool final = true)
+        int32_t WSSession::sendMessage(const std::string &msg, int32_t opcode, bool final)
         {
             return WSSendMessage(this, std::make_shared<WSFrameMessage>(opcode, msg), false, final);
         }
@@ -115,9 +115,11 @@ namespace tide
 
         bool WSSession::handleServerShake()
         {
+            return true;
         }
         bool WSSession::handleClientShake()
         {
+            return true;
         }
 
         WSFrameMessage::ptr WSRecvMessage(Stream *stream, bool client)

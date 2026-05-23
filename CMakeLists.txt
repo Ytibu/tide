@@ -37,7 +37,12 @@ set(LIB_SRC
     tide/http/http_session.cc
     tide/http/http_server.cc
     tide/http/servlet.cc
+    tide/http/ws_connection.cc
+    tide/http/ws_session.cc
+    tide/http/ws_server.cc
+    tide/http/ws_servlet.cc
     tide/tcp_server.cc
+    tide/util/hash_util.cc
     tide/uri.cc
     tide/daemon.cc
     tide/env.cc

@@ -1,5 +1,7 @@
 # Tide project libraries and linking configuration
 
+find_package(OpenSSL REQUIRED)
+
 macro(tide_setup_libraries)
     # Include directories for third-party libs
     include_directories(/usr/local/include)
@@ -8,6 +10,8 @@ macro(tide_setup_libraries)
     # Define all required libraries
     set(TIDE_LIBRARIES
         yaml-cpp
+        OpenSSL::SSL
+        OpenSSL::Crypto
         pthread
     )
 endmacro()
