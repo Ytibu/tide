@@ -190,6 +190,12 @@ namespace tide
             using ptr = std::shared_ptr<HttpConnectionPool>;
             using MutexType = Mutex;
 
+            static HttpConnectionPool::ptr Create(const std::string &uri,
+                                              const std::string &vhost,
+                                              uint32_t maxSize,
+                                              uint32_t maxAliveTime,
+                                              uint32_t maxRequest);
+
             /**
              * @brief 构造函数， 构造一个连接池
              * 
@@ -203,6 +209,7 @@ namespace tide
             HttpConnectionPool(const std::string &host,
                                const std::string &vhost,
                                uint32_t port,
+                               bool isHttps,
                                uint32_t maxSize,
                                uint32_t maxAliveTime,
                                uint32_t maxRequest);
@@ -320,6 +327,7 @@ namespace tide
             uint32_t m_maxSize;
             uint32_t m_maxAliveTime;
             uint32_t m_maxRequest;
+            bool m_isHttps;
 
             MutexType m_mutex;
             std::list<HttpConnection *> m_conns;

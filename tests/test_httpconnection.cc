@@ -9,20 +9,17 @@ static tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
 void test_pool()
 {
-    tide::http::HttpConnectionPool::ptr pool(new tide::http::HttpConnectionPool("8.146.201.152", "", 80, 10, 1000 * 30, 20));
-    if(!pool)
+    tide::http::HttpConnectionPool::ptr pool(new tide::http::HttpConnectionPool("8.146.201.152", "", 80, false, 10, 1000 * 30, 20));
+    if (!pool)
     {
         TIDE_LOG_ERROR(g_logger) << "create http connection pool failed";
         return;
     }
 
-    tide::IOManager::GetThis()->addTimer(1000, [pool](){
+    tide::IOManager::GetThis()->addTimer(1000, [pool]()
+                                         {
         auto r = pool->doGET("/", 3000);
-        TIDE_LOG_INFO(g_logger) << "result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : "");
-    }, true);
-
-
-
+        TIDE_LOG_INFO(g_logger) << "result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : ""); }, true);
 }
 
 void run()
@@ -32,11 +29,13 @@ void run()
     {
         TIDE_LOG_ERROR(g_logger) << "get address error";
         return;
-    }else{
+    }
+    else
+    {
         TIDE_LOG_INFO(g_logger) << "address=" << addr->toString();
     }
     tide::Socket::ptr sock = tide::Socket::CreateTCP(addr);
-    if (!sock)    
+    if (!sock)
     {
         TIDE_LOG_ERROR(g_logger) << "create socket error";
         return;
@@ -50,35 +49,46 @@ void run()
 
     tide::http::HttpConnection::ptr conn(new tide::http::HttpConnection(sock));
     tide::http::HttpRequest::ptr req(new tide::http::HttpRequest);
-    TIDE_LOG_INFO(g_logger) << "req=\n" << *req;
+    TIDE_LOG_INFO(g_logger) << "req=\n"
+                            << *req;
 
     conn->sendRequest(req);
     auto rsp = conn->recvResponse();
 
-    if (!rsp) {
+    if (!rsp)
+    {
         TIDE_LOG_ERROR(g_logger) << "recv response error";
         return;
     }
-    TIDE_LOG_INFO(g_logger) << "rsp=\n" << *rsp;
+    TIDE_LOG_INFO(g_logger) << "rsp=\n"
+                            << *rsp;
 
     // 写入文件
     std::ofstream ofs("./log/response.txt");
     ofs << *rsp;
     ofs.close();
 
-
     std::cout << "-----------------------------------------" << std::endl;
 
     // auto r = tide::http::HttpConnection::DoGET("http://chat.baidu.com/search/9006854824565958738?enter_type=pic_picfunc_3", 5000);
     auto r = tide::http::HttpConnection::DoGET("http://8.146.201.152/assistant.html", 5000);
-    TIDE_LOG_INFO(g_logger) << "DoGET result=" << r->result << " error=" << r->error << " rsp=\n" << (r->response ? r->response->toString() : "");
+    TIDE_LOG_INFO(g_logger) << "DoGET result=" << r->result << " error=" << r->error << " rsp=\n"
+                            << (r->response ? r->response->toString() : "");
 
     // test_pool();
+}
+
+void test_https()
+{
+    auto r = tide::http::HttpConnection::DoGET("https://www.baidu.com/", 5000);
+    TIDE_LOG_INFO(g_logger) << "DoGET result=" << r->result << " error=" << r->error << " rsp=\n"
+                            << (r->response ? r->response->toString() : "");
 }
 
 int main()
 {
     tide::IOManager iom(2);
-    iom.schedule(run);
+    // iom.schedule(run);
+    iom.schedule(test_https);
     return 0;
 }

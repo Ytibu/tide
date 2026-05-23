@@ -12,9 +12,8 @@ namespace tide
     namespace http
     {
         // 构造函数，初始化 HttpServer 对象，默认不使用 keepalive，使用当前线程的 IOManager 作为工作线程和接收线程
-        HttpServer::HttpServer(bool keepalive, tide::IOManager* worker, tide::IOManager* accept_worker)
-            : TcpServer(worker, accept_worker)
-            , m_isKeepalive(keepalive)
+        HttpServer::HttpServer(bool keepalive, tide::IOManager *worker, tide::IOManager *accept_worker)
+            : TcpServer(worker, accept_worker), m_isKeepalive(keepalive)
         {
             m_dispatch.reset(new ServletDispatch);
         }
@@ -29,8 +28,8 @@ namespace tide
                 auto req = session->recvRequest();
                 if (!req)
                 {
-                    TIDE_LOG_WARN(g_logger) << "recv http request failed, errno=" << errno 
-                            << " errstr=" << strerror(errno) << " client:" << *client;
+                    TIDE_LOG_WARN(g_logger) << "recv http request failed, errno=" << errno
+                                            << " errstr=" << strerror(errno) << " client:" << *client;
                     break;
                 }
 
@@ -46,6 +45,12 @@ namespace tide
             } while (m_isKeepalive);
 
             session->close();
+        }
+
+        void HttpServer::setName(const std::string &v)
+        {
+            TcpServer::setName(v);
+            m_dispatch->setDefault(std::make_shared<NotFoundServlet>(v));
         }
     }
 }

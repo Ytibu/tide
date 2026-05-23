@@ -190,7 +190,7 @@ namespace tide
             catch (const std::exception &e)
             {
                 TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ConfigVar::toString exception: "
-                                                << e.what() << " convert: " << typeid(m_value).name() << " to string";
+                                                << e.what() << " convert: " << typeid(m_value).name() << " to string" << " name=" << m_name;
             }
             return "";
         }
@@ -212,7 +212,7 @@ namespace tide
             catch (const std::exception &e)
             {
                 TIDE_LOG_ERROR(TIDE_LOG_ROOT()) << "ConfigVar::fromString exception: "
-                                                << e.what() << " convert: " << typeid(m_value).name() << " to string";
+                                                << e.what() << " convert: " << typeid(m_value).name() << " to string" << " name=" << m_name << " value=" << val;
             }
                return false;
         }

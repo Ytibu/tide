@@ -123,13 +123,15 @@ namespace tide
                                                   Uri::ptr uri,
                                                   uint64_t timout_ms)
         {
+            bool is_ssl = uri->getScheme() == "https";
             Address::ptr addr = uri->createAddress();
             if (!addr)
             {
                 return std::make_shared<HttpResult>((int)HttpResult::Error::INVALID_HOST, nullptr, "invalid host: " + uri->getHost());
             }
 
-            Socket::ptr sock = Socket::CreateTCP(addr);
+            // Socket::ptr sock = Socket::CreateTCP(addr);
+            Socket::ptr sock = is_ssl ? SSLSocket::CreateTCP(addr) : Socket::CreateTCP(addr);
             if (!sock)
             {
                 return std::make_shared<HttpResult>((int)HttpResult::Error::CONNECT_FAIL, nullptr, "create socket fail for: " + addr->toString());
@@ -322,13 +324,27 @@ namespace tide
             return writeFixSize(data.c_str(), data.size());
         }
 
+        HttpConnectionPool::HttpConnectionPool::ptr Create(const std::string &uri, const std::string &vhost,
+                                                           uint32_t maxSize,
+                                                           uint32_t maxAliveTime,
+                                                           uint32_t maxRequest)
+        {
+            Uri::ptr turi = Uri::Create(uri);
+            if (!turi)
+            {
+                TIDE_LOG_ERROR(g_logger) << "invalid uri=" << uri;
+            }
+            return std::make_shared<HttpConnectionPool>(turi->getHost(), vhost, turi->getPort(), turi->getScheme() == "https", maxSize, maxAliveTime, maxRequest);
+        }
+
         HttpConnectionPool::HttpConnectionPool(const std::string &host,
                                                const std::string &vhost,
                                                uint32_t port,
+                                               bool isHttps,
                                                uint32_t maxSize,
                                                uint32_t maxAliveTime,
                                                uint32_t maxRequest)
-            : m_host(host), m_vhost(vhost), m_port(port), m_maxSize(maxSize), m_maxAliveTime(maxAliveTime), m_maxRequest(maxRequest)
+            : m_host(host), m_vhost(vhost), m_port(port ? port : (isHttps ? 443 : 80)), m_maxSize(maxSize), m_maxAliveTime(maxAliveTime), m_maxRequest(maxRequest), m_isHttps(isHttps)
         {
         }
 
@@ -376,7 +392,8 @@ namespace tide
                 }
 
                 addr->setPort(m_port);
-                Socket::ptr sock = Socket::CreateTCP(addr);
+                // Socket::ptr sock = Socket::CreateTCP(addr);
+                Socket::ptr sock = m_isHttps ? SSLSocket::CreateTCP(addr) : Socket::CreateTCP(addr);
                 if (!sock)
                 {
                     TIDE_LOG_ERROR(g_logger) << "create socket failed for: " << addr->toString();

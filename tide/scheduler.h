@@ -8,6 +8,7 @@
 #include <atomic>
 #include <string>
 
+#include "mutex.h"
 #include "fiber.h"
 #include "thread.h"
 
@@ -63,8 +64,9 @@ namespace tide
             }
         }
 
-        // void switchTo(int thread = -1);
-        // std::ostream& dump(std::ostream& os);
+        void switchTo(int thread = -1);
+        std::ostream &dump(std::ostream &os);
+
     protected:
         virtual void tickle();
         void run();
@@ -139,5 +141,15 @@ namespace tide
         int m_rootThread = 0;
     };
 
+    class SchedulerSwitcher : public noncopyable
+    {
+    public:
+        SchedulerSwitcher(Scheduler *target = nullptr);
+        ~SchedulerSwitcher();
+
+    private:
+        Scheduler *m_caller;
+    };
+
 };
-#endif //TIDE_SCHEDULER_H__
+#endif // TIDE_SCHEDULER_H__

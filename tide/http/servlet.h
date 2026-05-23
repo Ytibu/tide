@@ -59,7 +59,7 @@ namespace tide
              * 
              * @return std::string 
              */
-            virtual std::string getName() const { return m_name; }
+            const std::string getName() const { return m_name; }
 
         protected:
             /**
@@ -226,7 +226,7 @@ namespace tide
              * @brief 构造函数，初始化 Servlet 的名称为 "NotFoundServlet"
              * 
              */
-            NotFoundServlet();
+            NotFoundServlet(const std::string &name);
 
             /**
              * @brief 处理 HTTP 请求，返回 404 Not Found 响应
@@ -237,6 +237,10 @@ namespace tide
              * @return int32_t 
              */
             virtual int32_t handle(tide::http::HttpRequest::ptr req, tide::http::HttpResponse::ptr rsp, tide::http::HttpSession::ptr session) override;
+        
+        private:
+            std::string m_name;
+            std::string m_content;
         };
 
     }

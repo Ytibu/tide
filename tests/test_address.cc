@@ -8,16 +8,27 @@ void test_address()
 {
     std::vector<tide::Address::ptr> addrs;
 
-    auto addr = tide::Address::Lookup(addrs, "www.baidu.com");
-    if(!addr)
+    // auto addr = tide::Address::Lookup(addrs, "www.baidu.com");
+    bool v = tide::Address::Lookup(addrs, "localhost:3080");
+    if(!v)
     {
-        TIDE_LOG_ERROR(g_logger) << "lookup www.baidu.com failed";
+        TIDE_LOG_ERROR(g_logger) << "lookup localhost:3080 failed";
         return;
     }
 
     for(size_t i = 0; i < addrs.size(); ++i)
     {
-        TIDE_LOG_INFO(g_logger) << "lookup www.baidu.com: " << i << " - " << addrs[i]->toString();
+        TIDE_LOG_INFO(g_logger) << "lookup localhost:3080: " << i << " - " << addrs[i]->toString();
+    }
+
+    auto addr = tide::Address::LookupAny("localhost:4080");
+    if(addr)
+    {
+        TIDE_LOG_INFO(g_logger) << "lookup localhost:4080: ";
+    }
+    else
+    {
+        TIDE_LOG_ERROR(g_logger) << "lookup localhost:4080 failed";
     }
 }
 

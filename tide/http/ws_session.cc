@@ -51,6 +51,17 @@ namespace tide
                     break;
                 }
 
+                if (strcasecmp(req->getHeader("Upgrade").c_str(), "websocket"))
+                {
+                    TIDE_LOG_INFO(g_logger) << "http header Upgrade != websocket";
+                    break;
+                }
+                if (strcasecmp(req->getHeader("Connection").c_str(), "Upgrade"))
+                {
+                    TIDE_LOG_INFO(g_logger) << "http header Connection != Upgrade";
+                    break;
+                }
+
                 if (req->getHeaderAs<int>("Sec-websocket-version") != 13)
                 {
                     TIDE_LOG_INFO(g_logger) << " http header Sec-websocket-version is not 13";
@@ -66,6 +77,7 @@ namespace tide
 
                 std::string v = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
                 v = tide::base64encode(tide::sha1sum(v));
+                req->setWebsocket(true);
 
                 auto rsp = req->createResponse();
                 rsp->setStatus(HttpStatus::HTTP_STATUS_SWITCHING_PROTOCOLS);
@@ -77,8 +89,8 @@ namespace tide
 
                 sendResponse(rsp);
 
-                TIDE_LOG_INFO(g_logger) << *req;
-                TIDE_LOG_INFO(g_logger) << *rsp;
+                TIDE_LOG_DEBUG(g_logger) << *req;
+                TIDE_LOG_DEBUG(g_logger) << *rsp;
 
                 return req;
 
@@ -113,14 +125,14 @@ namespace tide
             return WSPong(this);
         }
 
-        bool WSSession::handleServerShake()
-        {
-            return true;
-        }
-        bool WSSession::handleClientShake()
-        {
-            return true;
-        }
+        // bool WSSession::handleServerShake()
+        // {
+        //     return true;
+        // }
+        // bool WSSession::handleClientShake()
+        // {
+        //     return true;
+        // }
 
         WSFrameMessage::ptr WSRecvMessage(Stream *stream, bool client)
         {

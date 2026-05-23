@@ -46,6 +46,16 @@ namespace tide
          * @return false 
          */
         virtual bool bind(const std::vector<tide::Address::ptr>& addrs, std::vector<tide::Address::ptr>& fails, bool ssl = false);
+
+        /**
+         * @brief 加载SSL证书和私钥文件，启用SSL/TLS支持。
+         * 
+         * @param cert_file 
+         * @param key_file 
+         * @return true 
+         * @return false 
+         */
+        bool loadCertificates(const std::string& cert_file, const std::string& key_file);
         
         /**
          * @brief 启动服务器，开始接受客户端连接并处理请求。
@@ -89,7 +99,7 @@ namespace tide
          * 
          * @param v 
          */
-        void setName(const std::string& v) { m_name = v; }
+        virtual void setName(const std::string& v) { m_name = v; }
     
     protected:
         /**

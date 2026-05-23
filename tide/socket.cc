@@ -164,6 +164,20 @@ namespace tide
             return false;
         }
 
+        UnixAddress::ptr uaddr = std::dynamic_pointer_cast<UnixAddress>(addr);
+        if (uaddr)
+        {
+            Socket::ptr sock = Socket::CreateUnixTCPSocket();
+            if (sock->connect(uaddr))
+            {
+                return false;
+            }
+            else
+            {
+                tide::FSUtil::Unlink(uaddr->getPath(), true);
+            }
+        }
+
         if (::bind(m_sockfd, addr->getAddr(), addr->getAddrLen()))
         {
             TIDE_LOG_ERROR(g_logger) << "bind error, errno=" << errno << " errstr=" << strerror(errno);
@@ -532,7 +546,7 @@ namespace tide
         if (newsock == -1)
         {
             TIDE_LOG_ERROR(g_logger) << "accept(" << m_sockfd << ") errno="
-                                      << errno << " errstr=" << strerror(errno);
+                                     << errno << " errstr=" << strerror(errno);
             return nullptr;
         }
         sock->m_ctx = m_ctx;
@@ -677,19 +691,19 @@ namespace tide
         if (SSL_CTX_use_certificate_chain_file(m_ctx.get(), cert_file.c_str()) != 1)
         {
             TIDE_LOG_ERROR(g_logger) << "SSL_CTX_use_certificate_chain_file("
-                                      << cert_file << ") error";
+                                     << cert_file << ") error";
             return false;
         }
         if (SSL_CTX_use_PrivateKey_file(m_ctx.get(), key_file.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             TIDE_LOG_ERROR(g_logger) << "SSL_CTX_use_PrivateKey_file("
-                                      << key_file << ") error";
+                                     << key_file << ") error";
             return false;
         }
         if (SSL_CTX_check_private_key(m_ctx.get()) != 1)
         {
             TIDE_LOG_ERROR(g_logger) << "SSL_CTX_check_private_key cert_file="
-                                      << cert_file << " key_file=" << key_file;
+                                     << cert_file << " key_file=" << key_file;
             return false;
         }
         return true;

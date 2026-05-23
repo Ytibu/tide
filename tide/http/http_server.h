@@ -50,6 +50,8 @@ namespace tide
              */
             void setServletDispatch(ServletDispatch::ptr v) { m_dispatch = v; }
 
+            virtual void setName(const std::string& v) override;
+
         protected:
             /**
              * @brief 处理客户端请求

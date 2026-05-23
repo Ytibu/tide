@@ -15,7 +15,8 @@ void run()
 		return;
 	}
 	tide::http::HttpServer::ptr http_server(new tide::http::HttpServer(true, worker.get()));
-	if(!http_server->bind(addr))
+	bool ssl = false;
+	if(!http_server->bind(addr, ssl))
 	{
 		TIDE_LOG_ERROR(g_logger) << "bind " << *addr << " fail";
 		sleep(2);

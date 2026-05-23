@@ -405,6 +405,13 @@ namespace tide
          */
         std::ostream &insert(std::ostream &os) const override;
 
+        /**
+         * @brief 获取UNIX域套接字路径字符串
+         * 
+         * @return std::string 
+         */
+        std::string getPath() const;
+
     private:
         sockaddr_un m_addr;
         socklen_t m_length;

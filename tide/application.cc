@@ -4,6 +4,7 @@
 #include <functional>
 #include <utility>
 
+#include "worker.h"
 #include "iomanager.h"
 #include "address.h"
 #include "env.h"
@@ -30,6 +31,7 @@ namespace tide
         std::vector<std::string> address; // 服务器监听的地址列表，例如["0.0.0.0:8099"]
         int keepalive = 0;
         int timeout = 1000 * 2 * 60; // 连接超时时间，单位为毫秒，默认值为2分钟
+        int ssl = 0;                 // 是否启用SSL，0表示不启用，1表示启用，默认值为0
         std::string name;
         std::string cert_file;
         std::string key_file;
@@ -40,14 +42,7 @@ namespace tide
 
         bool operator==(const HttpServerConfig &other) const
         {
-            return address == other.address
-             && keepalive == other.keepalive
-             && timeout == other.timeout
-             && name == other.name
-             && cert_file == other.cert_file
-             && key_file == other.key_file
-             && accept_worker == other.accept_worker
-             && process_worker == other.process_worker;
+            return address == other.address && keepalive == other.keepalive && timeout == other.timeout && name == other.name && cert_file == other.cert_file && key_file == other.key_file && accept_worker == other.accept_worker && process_worker == other.process_worker;
         }
     };
 
@@ -206,80 +201,189 @@ namespace tide
         for (auto i : http_confs)
         {
             TIDE_LOG_INFO(g_logger) << "\n"
-                    << LexicalCast<HttpServerConfig, std::string>()(i);
+                                    << LexicalCast<HttpServerConfig, std::string>()(i);
         }
 
-        tide::IOManager iom(1);
-        iom.schedule(std::bind(&Application::run_fiber, this));
-        iom.stop();
+        // tide::IOManager iom(1);
+        // iom.schedule(std::bind(&Application::run_fiber, this));
+        // iom.stop();
+        m_mainIOManager.reset(new tide::IOManager(1, true, "main"));
+        m_mainIOManager->schedule(std::bind(&Application::run_fiber, this));
+        m_mainIOManager->addTimer(1000, []() {}, true);
+        m_mainIOManager->stop();
 
         return 0;
     }
 
+    // int Application::run_fiber()
+    // {
+    //     // 从全局配置变量 g_http_server_conf 中获取 HTTP 服务器的配置列表，并为每个配置项创建一个 HTTP 服务器实例，绑定监听地址并启动服务器。
+    //     tide::WorkerMgr::GetInstance()->init();
+    //     auto http_confs = g_http_server_conf->getValue();
+    //     if (http_confs.empty())
+    //     {
+    //         TIDE_LOG_WARN(g_logger) << "no http_servers config, please config http_servers in path: "
+    //                 << tide::EnvMgr::GetInstance()->getAbsolutePath(tide::EnvMgr::GetInstance()->get("c", "conf"));
+    //         return -1;
+    //     }
+
+    //     for (auto &i : http_confs)
+    //     {
+    //         TIDE_LOG_INFO(g_logger) << LexicalCast<HttpServerConfig, std::string>()(i);
+    //         std::vector<tide::Address::ptr> addrs;
+    //         for (auto &a : i.address)
+    //         {
+    //             size_t pos = a.find(':');
+    //             if (pos == std::string::npos)
+    //             {
+    //                 TIDE_LOG_ERROR(g_logger) << "invalid address: " << a;
+    //                 continue;
+    //             }
+
+    //             tide::Address::ptr addr = tide::Address::LookupAny(a);
+    //             if (addr)
+    //             {
+    //                 addrs.push_back(addr);
+    //                 continue;
+    //             }
+
+    //             std::vector<std::pair<tide::Address::ptr, uint32_t>> result;
+    //             if (!tide::Address::GetInterfaceAddresses(result, a.substr(0, pos)))
+    //             {
+    //                 TIDE_LOG_ERROR(g_logger) << "invalid interface: " << a.substr(0, pos);
+    //             }
+
+    //             for (auto &x : result)
+    //             {
+    //                 auto ipaddr = std::dynamic_pointer_cast<tide::IPAddress>(x.first);
+    //                 if (ipaddr)
+    //                 {
+    //                     ipaddr->setPort(atoi(a.substr(pos + 1).c_str()));
+    //                 }
+    //                 addrs.push_back(ipaddr);
+    //             }
+    //         }
+
+    //         tide::http::HttpServer::ptr server(new tide::http::HttpServer(i.keepalive));
+    //         std::vector<tide::Address::ptr> fails;
+    //         if (!server->bind(addrs, fails))
+    //         {
+    //             for (auto &x : fails)
+    //             {
+    //                 TIDE_LOG_ERROR(g_logger) << "bind address fail: " << *x;
+    //             }
+    //             TIDE_LOG_INFO(g_logger) << "addrs: " << addrs.size() << " fail addrs: " << fails.size();
+    //             TIDE_LOG_INFO(g_logger) << "server start with pid: " << getpid();
+    //             exit(0);
+    //         }
+
+    //         server->start();
+    //         m_httpservers.push_back(server);
+    //     }
+
+    //     return 0;
+    // }
     int Application::run_fiber()
     {
-        // 从全局配置变量 g_http_server_conf 中获取 HTTP 服务器的配置列表，并为每个配置项创建一个 HTTP 服务器实例，绑定监听地址并启动服务器。
+        tide::WorkerMgr::GetInstance()->init();
         auto http_confs = g_http_server_conf->getValue();
-        if (http_confs.empty())
-        {
-            TIDE_LOG_WARN(g_logger) << "no http_servers config, please config http_servers in path: "
-                    << tide::EnvMgr::GetInstance()->getAbsolutePath(tide::EnvMgr::GetInstance()->get("c", "conf"));
-            return -1;
-        }
-
         for (auto &i : http_confs)
         {
-            std::vector<tide::Address::ptr> addrs;
+            TIDE_LOG_INFO(g_logger) << LexicalCast<HttpServerConfig, std::string>()(i);
+
+            std::vector<Address::ptr> address;
             for (auto &a : i.address)
             {
-                size_t pos = a.find(':');
+                size_t pos = a.find(":");
                 if (pos == std::string::npos)
                 {
-                    TIDE_LOG_ERROR(g_logger) << "invalid address: " << a;
+                    // TIDE_LOG_ERROR(g_logger) << "invalid address: " << a;
+                    address.push_back(UnixAddress::ptr(new UnixAddress(a)));
                     continue;
                 }
-
-                tide::Address::ptr addr = tide::Address::LookupAny(a);
+                int32_t port = atoi(a.substr(pos + 1).c_str());
+                // 127.0.0.1
+                auto addr = tide::IPAddress::Create(a.substr(0, pos).c_str(), port);
                 if (addr)
                 {
-                    addrs.push_back(addr);
+                    address.push_back(addr);
+                    continue;
+                }
+                std::vector<std::pair<Address::ptr, uint32_t>> result;
+                if (tide::Address::GetInterfaceAddresses(result,
+                                                         a.substr(0, pos)))
+                {
+                    for (auto &x : result)
+                    {
+                        auto ipaddr = std::dynamic_pointer_cast<IPAddress>(x.first);
+                        if (ipaddr)
+                        {
+                            ipaddr->setPort(atoi(a.substr(pos + 1).c_str()));
+                        }
+                        address.push_back(ipaddr);
+                    }
                     continue;
                 }
 
-                std::vector<std::pair<tide::Address::ptr, uint32_t>> result;
-                if (!tide::Address::GetInterfaceAddresses(result, a.substr(0, pos)))
+                auto aaddr = tide::Address::LookupAny(a);
+                if (aaddr)
                 {
-                    TIDE_LOG_ERROR(g_logger) << "invalid interface: " << a.substr(0, pos);
+                    address.push_back(aaddr);
+                    continue;
                 }
-
-                for (auto &x : result)
+                TIDE_LOG_ERROR(g_logger) << "invalid address: " << a;
+                _exit(0);
+            }
+            IOManager *accept_worker = tide::IOManager::GetThis();
+            IOManager *process_worker = tide::IOManager::GetThis();
+            if (!i.accept_worker.empty())
+            {
+                accept_worker = tide::WorkerMgr::GetInstance()->getAsIOManager(i.accept_worker).get();
+                if (!accept_worker)
                 {
-                    auto ipaddr = std::dynamic_pointer_cast<tide::IPAddress>(x.first);
-                    if (ipaddr)
-                    {
-                        ipaddr->setPort(atoi(a.substr(pos + 1).c_str()));
-                    }
-                    addrs.push_back(ipaddr);
+                    TIDE_LOG_ERROR(g_logger) << "accept_worker: " << i.accept_worker
+                                             << " not exists";
+                    _exit(0);
+                }
+            }
+            if (!i.process_worker.empty())
+            {
+                process_worker = tide::WorkerMgr::GetInstance()->getAsIOManager(i.process_worker).get();
+                if (!process_worker)
+                {
+                    TIDE_LOG_ERROR(g_logger) << "process_worker: " << i.process_worker
+                                             << " not exists";
+                    _exit(0);
                 }
             }
 
-            tide::http::HttpServer::ptr server(new tide::http::HttpServer(i.keepalive));
-            std::vector<tide::Address::ptr> fails;
-            if (!server->bind(addrs, fails))
+            tide::http::HttpServer::ptr server(new tide::http::HttpServer(i.keepalive,
+                                                                          process_worker, accept_worker));
+            std::vector<Address::ptr> fails;
+            if (!server->bind(address, fails, i.ssl))
             {
                 for (auto &x : fails)
                 {
-                    TIDE_LOG_ERROR(g_logger) << "bind address fail: " << *x;
+                    TIDE_LOG_ERROR(g_logger) << "bind address fail:"
+                                             << *x;
                 }
-                TIDE_LOG_INFO(g_logger) << "addrs: " << addrs.size() << " fail addrs: " << fails.size();
-                TIDE_LOG_INFO(g_logger) << "server start with pid: " << getpid();
-                exit(0);
+                _exit(0);
             }
-
+            if (i.ssl)
+            {
+                if (!server->loadCertificates(i.cert_file, i.key_file))
+                {
+                    TIDE_LOG_ERROR(g_logger) << "loadCertificates fail, cert_file="
+                                             << i.cert_file << " key_file=" << i.key_file;
+                }
+            }
+            if (!i.name.empty())
+            {
+                server->TcpServer::setName(i.name);
+            }
             server->start();
             m_httpservers.push_back(server);
         }
-
         return 0;
     }
 

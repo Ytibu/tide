@@ -57,18 +57,21 @@ namespace tide
                 std::string body;
                 body.resize(content_length);
 
+                int len = 0;
                 if (content_length > offset)
                 {
-                    body.append(data, offset);
+                    memcpy(&body[0], data, offset);
+                    len = offset;
                 }
                 else
                 {
-                    body.append(data, content_length);
+                    memcpy(&body[0], data, content_length);
+                    len = content_length;
                 }
                 content_length -= offset;
                 if (content_length > 0)
                 {
-                    if (readFixSize(&body[offset], content_length) <= 0)
+                    if (readFixSize(&body[len], content_length) <= 0)
                     {
                         close();
                         return nullptr;
@@ -76,9 +79,15 @@ namespace tide
                 }
                 parser->getRequest()->setBody(body);
             }
+            std::string keeep_alive = parser->getRequest()->getHeader("Connection");
+            if(!strcasecmp(keeep_alive.c_str(), "keep-alive"))
+            {
+                parser->getRequest()->setClose(false);
+            }
 
             return parser->getRequest();
         }
+        
 
         // 发送 HTTP 响应，步骤：将 HttpResponse 对象转换为字符串，发送字符串数据
         int HttpSession::sendResponse(HttpResponse::ptr rsp)

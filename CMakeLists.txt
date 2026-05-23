@@ -14,6 +14,8 @@ tide_setup_libraries()
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(LIB_SRC
+    tide/mutex.cc
+    tide/worker.cc
     tide/log.cc
     tide/utils.cc
     tide/config.cc
@@ -47,6 +49,7 @@ set(LIB_SRC
     tide/daemon.cc
     tide/env.cc
     tide/application.cc
+
     )
 
 add_library(tide SHARED ${LIB_SRC})
