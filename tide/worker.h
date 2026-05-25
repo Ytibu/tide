@@ -1,6 +1,8 @@
 #ifndef TIDE_WORKER_H__
 #define TIDE_WORKER_H__
 
+#include <string>
+
 #include "thread.h"
 #include "singleton.h"
 #include "log.h"

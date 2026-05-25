@@ -7,7 +7,8 @@
 namespace tide
 {
     // 模块路径配置项，默认为/usr/local/tide/modules
-    static tide::ConfigVar<std::string>::ptr g_module_path = tide::Config::Lookup("module.path", std::string("module"), "module path");
+    static tide::ConfigVar<std::string>::ptr g_module_path 
+        = tide::Config::Lookup("module.path", std::string("module"), "module path");
 
     Module::Module(const std::string &name, const std::string &version, const std::string &filename)
         : m_name(name), m_version(version), m_filename(filename), m_id(name + "/" + version)

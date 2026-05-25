@@ -2,9 +2,17 @@
 #define TIDE_TCP_SERVER_H__
 
 #include <memory>
+#include <boost/lexical_cast.hpp>
+#include <yaml-cpp/yaml.h>
+#include <string>
+#include <vector>
+#include <map>
+#include <sstream>
 
 #include "iomanager.h"
 #include "noncopyable.h"
+#include "config.h"
+#include "socket.h"
 
 namespace tide
 {

@@ -1,12 +1,5 @@
 #include "my_module.h"
-#include "config.h"
-#include "log.h"
-#include "application.h"
-// #include "tide/http/ws_server.h"
 
-// #include "resource_servlet.h"
-// #include "chat_servlet.h"
-#include "env.h"
 
 namespace chat {
 
@@ -41,24 +34,6 @@ static int32_t handle(tide::http::HttpRequest::ptr req, tide::http::HttpResponse
 
 bool MyModule::onServerUp() {
     TIDE_LOG_INFO(g_logger) << "onServerUp";
-
-    // std::vector<tide::TcpServer::ptr> servers;
-    // if(!tide::Application::GetInstance()->getServer("http", servers)) {
-    //     TIDE_LOG_INFO(g_logger) << "not http server alive";
-    //     return false;
-    // }
-
-    // for(auto& i : servers) {
-    //     tide::http::HttpServer::ptr http_server = std::dynamic_pointer_cast<tide::http::HttpServer>(i);
-    //     if(!http_server) {
-    //         continue;
-    //     }
-
-    //     auto slt_dispatch = http_server->getServletDispatch();
-    //     slt_dispatch->addServlet("/html/*", handle);
-
-    //     TIDE_LOG_INFO(g_logger) << "http server name=" << i->getName() << " is up";
-    // }
     return true;
 }
 

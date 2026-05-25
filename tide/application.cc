@@ -116,10 +116,6 @@ namespace tide
             return false;
         }
 
-        // 获取配置文件路径，默认值为./conf，并将其转换为绝对路径，然后加载配置文件中的配置项到配置管理器中
-        // std::string conf_path = tide::EnvMgr::GetInstance()->getAbsolutePath(tide::EnvMgr::GetInstance()->get("c", "conf"));
-        // tide::Config::LoadFromConfDir(conf_path);
-
         // 创建工作目录，如果创建失败，则打印错误日志并返回false
         if (!tide::FSUtil::Mkdir(g_server_work_path->getValue()))
         {
@@ -140,6 +136,8 @@ namespace tide
     int Application::main(int argc, char **argv)
     {
         TIDE_LOG_INFO(g_logger) << "main";
+
+        // 加载配置目录，扫描并加载配置目录中的所有配置文件，默认目录为./conf
         std::string conf_path = tide::EnvMgr::GetInstance()->getConfigPath();
         tide::Config::LoadFromConfDir(conf_path, true);
 
@@ -194,7 +192,6 @@ namespace tide
                 size_t pos = a.find(":");
                 if (pos == std::string::npos)
                 {
-                    // SYLAR_LOG_ERROR(g_logger) << "invalid address: " << a;
                     address.push_back(UnixAddress::ptr(new UnixAddress(a)));
                     continue;
                 }
@@ -238,8 +235,7 @@ namespace tide
                 accept_worker = tide::WorkerMgr::GetInstance()->getAsIOManager(i.accept_worker).get();
                 if (!accept_worker)
                 {
-                    TIDE_LOG_ERROR(g_logger) << "accept_worker: " << i.accept_worker
-                                              << " not exists";
+                    TIDE_LOG_ERROR(g_logger) << "accept_worker: " << i.accept_worker  << " not exists";
                     _exit(0);
                 }
             }

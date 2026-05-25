@@ -2,6 +2,7 @@
 .vscode/
 build/
 bin/
+test_bin/
 lib/
 CMakeFiles/
 log/
@@ -10,4 +11,4 @@ conf/
 .deepseek/
 html/
 latex/
-chat_rom/
+chat_room/

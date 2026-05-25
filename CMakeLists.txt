@@ -11,7 +11,15 @@ tide_define_project_macros()
 tide_setup_compile_flags()
 tide_setup_libraries()
 
+# 输出详细编译命令（构建日志可见）
 set(CMAKE_VERBOSE_MAKEFILE ON)
+# 导出 compile_commands.json（供 clangd/IDE/排查编译命令使用）
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# 统一管理各类产物输出目录
+set(TIDE_BIN_DIR ${PROJECT_SOURCE_DIR}/bin)
+set(TIDE_TEST_BIN_DIR ${PROJECT_SOURCE_DIR}/test_bin)
+set(TIDE_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
 
 set(LIB_SRC
     tide/scheduler.cc
@@ -54,18 +62,34 @@ set(LIB_SRC
     tide/module.cc
     tide/bytearray.cc
     tide/library.cc
-    # tide/my_module.cc
+    tide/my_module.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})
 tide_link_libraries(tide)
+# 动态库输出到 lib/
+set_target_properties(tide PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${TIDE_LIB_DIR}
+    ARCHIVE_OUTPUT_DIRECTORY ${TIDE_LIB_DIR}
+)
 
+# 主程序输出到 bin/
+add_executable(tide_main tide/main.cc)
+add_dependencies(tide_main tide)
+tide_link_executable(tide_main)
+set_target_properties(tide_main PROPERTIES
+    OUTPUT_NAME tide
+    RUNTIME_OUTPUT_DIRECTORY ${TIDE_BIN_DIR}
+)
+
+# 安装规则：库文件安装到 lib/，头文件安装到 include/tide/
 install(TARGETS tide
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+# 安装头文件，保持目录结构
 install(DIRECTORY tide/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tide
     FILES_MATCHING PATTERN "*.h"
@@ -80,8 +104,9 @@ foreach(test_src ${TEST_SOURCES})
     add_executable(${test_name} ${test_src})
     add_dependencies(${test_name} tide)
     tide_link_executable(${test_name})
+    # 测试程序统一输出到 test_bin/
+    set_target_properties(${test_name} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${TIDE_TEST_BIN_DIR}
+    )
 endforeach()
 endif()
-
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

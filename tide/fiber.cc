@@ -1,5 +1,5 @@
 #include "fiber.h"
-
+#include "scheduler.h"
 #include "log.h"
 #include "config.h"
 #include "macro.h"

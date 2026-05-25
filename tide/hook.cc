@@ -9,6 +9,7 @@
 #include <dlfcn.h>
 
 #include "log.h"
+#include "config.h"
 #include "iomanager.h"
 #include "fiber.h"
 #include "fd_manager.h"

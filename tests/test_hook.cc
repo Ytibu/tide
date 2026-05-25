@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include"../tide/hook.h"
+
 tide::Logger::ptr g_logger = TIDE_LOG_ROOT();
 
 void test_hook()

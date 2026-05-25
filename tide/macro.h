@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include <assert.h>
-#include "tide.h"
+#include "log.h"
 
 namespace tide{
 

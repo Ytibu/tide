@@ -14,6 +14,13 @@ namespace tide
     public:
         using ptr = std::shared_ptr<Module>;
 
+        /**
+         * @brief 模块构造函数，接受模块名称、版本和文件名作为参数，并生成模块ID，格式为"name/version"。
+         * 
+         * @param name 模块名
+         * @param version 模块版本
+         * @param filename 模块文件名
+         */
         Module(const std::string &name, const std::string &version, const std::string &filename);
         virtual ~Module() {}
 
