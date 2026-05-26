@@ -3,7 +3,7 @@
 #include "../tide/utils.h"
 
 void run() {
-    auto rt = tide::http::WSConnection::Create("http://127.0.0.1:8020/sylar", 1000);
+    auto rt = tide::http::WSConnection::Create("http://127.0.0.1:8020/tide", 1000);
     if(!rt.second) {
         std::cout << rt.first->toString() << std::endl;
         return;

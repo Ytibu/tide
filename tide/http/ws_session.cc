@@ -13,8 +13,8 @@ namespace tide
 
         static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
-        tide::ConfigVar<uint64_t>::ptr g_websocket_message_max_size =
-            tide::Config::Lookup("websocket.message_max_size", (uint64_t)(1024 * 1024 * 32), "websocket message max size");
+        tide::ConfigVar<uint32_t>::ptr g_websocket_message_max_size =
+            tide::Config::Lookup("websocket.message.max_size", (uint32_t)(1024 * 1024 * 32), "websocket message max size");
 
         std::string WSFrameHeader::toString() const
         {
@@ -125,15 +125,6 @@ namespace tide
             return WSPong(this);
         }
 
-        // bool WSSession::handleServerShake()
-        // {
-        //     return true;
-        // }
-        // bool WSSession::handleClientShake()
-        // {
-        //     return true;
-        // }
-
         WSFrameMessage::ptr WSRecvMessage(Stream *stream, bool client)
         {
             int opcode = 0;
@@ -141,36 +132,34 @@ namespace tide
             int cur_len = 0;
             do
             {
-                WSFrameHeader header;
-                int rt = stream->readFixSize(&header, sizeof(header));
-                if (rt <= 0)
+                WSFrameHeader ws_head;
+                if (stream->readFixSize(&ws_head, sizeof(ws_head)) <= 0)
                 {
-                    TIDE_LOG_INFO(g_logger) << "read ws frame header failed, rt=" << rt;
                     break;
                 }
-                TIDE_LOG_INFO(g_logger) << "recv ws frame header: " << header.toString();
+                TIDE_LOG_DEBUG(g_logger) << "WSFrameHead " << ws_head.toString();
 
-                if (header.payload == WSFrameHeader::PING)
+                if (ws_head.opcode == WSFrameHeader::PING)
                 {
                     TIDE_LOG_INFO(g_logger) << "PING";
-                    if (WSPing(stream) <= 0)
+                    if (WSPong(stream) <= 0)
                     {
                         break;
                     }
                 }
-                else if (header.opcode == WSFrameHeader::PONG)
+                else if (ws_head.opcode == WSFrameHeader::PONG)
                 {
+                    TIDE_LOG_INFO(g_logger) << "PONG";
                 }
-                else if (header.opcode == WSFrameHeader::CONTINUE || header.opcode == WSFrameHeader::TEXT_FRAME || header.opcode == WSFrameHeader::BIN_FRAME)
+                else if (ws_head.opcode == WSFrameHeader::CONTINUE || ws_head.opcode == WSFrameHeader::TEXT_FRAME || ws_head.opcode == WSFrameHeader::BIN_FRAME)
                 {
-                    if (!client && !header.mask)
+                    if (!client && !ws_head.mask)
                     {
                         TIDE_LOG_INFO(g_logger) << "WSFrameHead mask != 1";
                         break;
                     }
-
                     uint64_t length = 0;
-                    if (header.payload == 126)
+                    if (ws_head.payload == 126)
                     {
                         uint16_t len = 0;
                         if (stream->readFixSize(&len, sizeof(len)) <= 0)
@@ -179,7 +168,7 @@ namespace tide
                         }
                         length = tide::byteswapOnLittleEndian(len);
                     }
-                    else if (header.payload == 127)
+                    else if (ws_head.payload == 127)
                     {
                         uint64_t len = 0;
                         if (stream->readFixSize(&len, sizeof(len)) <= 0)
@@ -190,56 +179,53 @@ namespace tide
                     }
                     else
                     {
-                        length = header.payload;
+                        length = ws_head.payload;
                     }
 
-                    if (cur_len + length > g_websocket_message_max_size->getValue())
+                    if ((cur_len + length) >= g_websocket_message_max_size->getValue())
                     {
-                        TIDE_LOG_INFO(g_logger) << "ws frame payload length too large, cur_len=" << cur_len
-                                                << " payload_len=" << length
-                                                << " max_payload_size=" << g_websocket_message_max_size->getValue();
+                        TIDE_LOG_WARN(g_logger) << "WSFrameMessage length > "
+                                                << g_websocket_message_max_size->getValue()
+                                                << " (" << (cur_len + length) << ")";
                         break;
                     }
 
                     char mask[4] = {0};
-                    if (header.mask)
+                    if (ws_head.mask)
                     {
                         if (stream->readFixSize(mask, sizeof(mask)) <= 0)
                         {
                             break;
                         }
                     }
-
                     data.resize(cur_len + length);
                     if (stream->readFixSize(&data[cur_len], length) <= 0)
                     {
                         break;
                     }
-
-                    if (header.mask)
+                    if (ws_head.mask)
                     {
-                        for (size_t i = 0; i < length; ++i)
+                        for (int i = 0; i < (int)length; ++i)
                         {
                             data[cur_len + i] ^= mask[i % 4];
                         }
                     }
-
                     cur_len += length;
 
-                    if (!opcode && header.opcode != WSFrameHeader::CONTINUE)
+                    if (!opcode && ws_head.opcode != WSFrameHeader::CONTINUE)
                     {
-                        opcode = header.opcode;
+                        opcode = ws_head.opcode;
                     }
 
-                    if (header.fin)
+                    if (ws_head.fin)
                     {
-                        TIDE_LOG_INFO(g_logger) << "recv ws frame fin, opcode=" << opcode << " length=" << cur_len;
+                        TIDE_LOG_DEBUG(g_logger) << data;
                         return WSFrameMessage::ptr(new WSFrameMessage(opcode, std::move(data)));
                     }
                 }
                 else
                 {
-                    TIDE_LOG_INFO(g_logger) << "unsupported ws frame opcode=" << header.opcode;
+                    TIDE_LOG_DEBUG(g_logger) << "invalid opcode=" << ws_head.opcode;
                 }
             } while (true);
             stream->close();
@@ -254,6 +240,7 @@ namespace tide
                 memset(&header, 0, sizeof(header));
                 header.fin = final;
                 header.opcode = msg->getOpcode();
+                header.mask = client;
                 uint64_t size = msg->getData().size();
                 if (size < 126)
                 {
@@ -308,9 +295,13 @@ namespace tide
                         break;
                     }
                 }
+                if (stream->writeFixSize(msg->getData().c_str(), size) <= 0)
+                {
+                    break;
+                }
 
                 return size + sizeof(header);
-            } while (true);
+            } while (0);
             stream->close();
             return -1;
         }

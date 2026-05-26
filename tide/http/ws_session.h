@@ -27,12 +27,12 @@ namespace tide
             };
 
             uint32_t opcode : 4;
-            bool rsv1 : 1;
-            bool rsv2 : 1;
             bool rsv3 : 1;
+            bool rsv2 : 1;
+            bool rsv1 : 1;
             bool fin : 1;
-            bool mask : 1;
             uint32_t payload : 7;
+            bool mask : 1;
 
             std::string toString() const;
         };
@@ -77,7 +77,7 @@ namespace tide
             bool handleClientShake();
         };
 
-        extern tide::ConfigVar<uint32_t>::ptr g_websocket_max_payload_size;
+        extern tide::ConfigVar<uint32_t>::ptr g_websocket_message_max_size;
 
         WSFrameMessage::ptr WSRecvMessage(Stream *stream, bool client);
         int32_t WSSendMessage(Stream *stream, WSFrameMessage::ptr msg, bool client, bool final);

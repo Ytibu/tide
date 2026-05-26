@@ -18,7 +18,7 @@ void run() {
     };
 
 
-    server->getWSServletDispatch()->addServlet("/sylar", fun);
+    server->getWSServletDispatch()->addServlet("/tide", fun);
     while(!server->bind(addr)) {
         TIDE_LOG_ERROR(g_logger) << "bind " << *addr << " fail";
         sleep(1);

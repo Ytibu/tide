@@ -1,14 +1,9 @@
 
 .vscode/
 build/
-bin/
 test_bin/
 lib/
 CMakeFiles/
-log/
-config/
-conf/
-.deepseek/
 html/
 latex/
 chat_room/

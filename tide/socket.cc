@@ -317,7 +317,6 @@ namespace tide
         {
             return ::recv(m_sockfd, buffer, length, flags);
         }
-        errno = ENOTCONN;
         return -1;
     }
     int Socket::recv(iovec *buffers, size_t length, int flags)
@@ -330,7 +329,6 @@ namespace tide
             msg.msg_iovlen = length;
             return ::recvmsg(m_sockfd, &msg, flags);
         }
-        errno = ENOTCONN;
         return -1;
     }
     int Socket::recvFrom(void *buffer, size_t length, Address::ptr from, int flags)

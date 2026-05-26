@@ -62,7 +62,6 @@ set(LIB_SRC
     tide/module.cc
     tide/bytearray.cc
     tide/library.cc
-    tide/my_module.cc
     )
 
 add_library(tide SHARED ${LIB_SRC})

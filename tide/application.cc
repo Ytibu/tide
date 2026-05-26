@@ -20,9 +20,9 @@ namespace tide
 {
     static tide::Logger::ptr g_logger = TIDE_LOG_NAME("system");
 
-    // 定义一个全局配置变量，用于指定服务器的工作目录，默认值为相对目录，便于不同环境部署
+    // 定义一个全局配置变量，用于指定服务器的工作目录，默认值为/apps/work/tide/
     static tide::ConfigVar<std::string>::ptr g_server_work_path =
-        tide::Config::Lookup<std::string>("server.work_path", std::string("./work"), "server work path");
+        tide::Config::Lookup<std::string>("server.work_path", std::string("/apps/work/tide"), "server work path");
 
     // 定义一个全局配置变量，用于指定服务器的PID文件路径，默认值为tide.pid，并提供描述信息
     static tide::ConfigVar<std::string>::ptr g_server_pid_file =
@@ -44,7 +44,7 @@ namespace tide
         m_argc = argc;
         m_argv = argv;
 
-        // 加载帮助信息
+        // 加载帮助信息: -s 启动服务器，-d 以daemon启动，-c 指定配置目录，-p输出帮助文档
         tide::EnvMgr::GetInstance()->addHelp("s", "start with the terminal");
         tide::EnvMgr::GetInstance()->addHelp("d", "run as a daemon");
         tide::EnvMgr::GetInstance()->addHelp("c", "config path, default: ./conf");
@@ -63,10 +63,12 @@ namespace tide
             is_printHelp = true;
         }
 
+        // 加载配置目录，扫描并加载配置目录中的所有配置文件，默认目录为./conf
         std::string conf_path = tide::EnvMgr::GetInstance()->getConfigPath();
         TIDE_LOG_INFO(g_logger) << "load conf path:" << conf_path;
         tide::Config::LoadFromConfDir(conf_path);
 
+        // 初始化模块管理器，获取所有模块并调用它们的onBeforeArgsParse方法，传递命令行参数 argc 和 argv
         ModuleMgr::GetInstance()->init();
         std::vector<Module::ptr> modules;
         ModuleMgr::GetInstance()->listAll(modules);
