@@ -47,6 +47,8 @@ set(LIB_SRC
     tide/http/ws_servlet.cc
     tide/util/hash_util.cc
     tide/util/json_util.cc
+    tide/email/email.cc
+    tide/email/smtp.cc
     tide/thread.cc
     tide/socket.cc
     tide/fiber.cc

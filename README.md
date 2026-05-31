@@ -44,8 +44,6 @@ http服务端与客户端系统
 
 本项目在学习和实现过程中参考了以下优秀开源项目
 
-- **核心借鉴**: [sylar-yin/sylar](https://github.com/sylar-yin/sylar)
-- 补充参考: [mongrel2/mongrel2](https://github.com/mongrel2/mongrel2.git)
-- 补充参考: [nodejs/http-parser](https://github.com/nodejs/http-parser.git)
-
-> **致敬：Tide 的核心设计与部分实现深受 `sylar` 启发，同时也参考了其他社区项目实践。感谢所有开源贡献者。**
+**开源借鉴**:
+- [mongrel2/mongrel2](https://github.com/mongrel2/mongrel2.git)
+- [nodejs/http-parser](https://github.com/nodejs/http-parser.git)

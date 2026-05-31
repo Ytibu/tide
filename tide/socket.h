@@ -140,6 +140,14 @@ namespace tide
         virtual int recvFrom(void *buffer, size_t length, Address::ptr from, int flags = 0) override;
         virtual int recvFrom(iovec *buffers, size_t length, Address::ptr from, int flags = 0) override;
 
+        /**
+         * @brief 加载 SSL 证书和私钥文件，cert_file 参数是证书文件路径，key_file 参数是私钥文件路径
+         * 
+         * @param cert_file 
+         * @param key_file 
+         * @return true 
+         * @return false 
+         */
         bool loadCertificates(const std::string &cert_file, const std::string &key_file);
         virtual std::ostream &dump(std::ostream &os) const override;
 
