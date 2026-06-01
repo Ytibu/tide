@@ -21,6 +21,8 @@ set(TIDE_BIN_DIR ${PROJECT_SOURCE_DIR}/bin)
 set(TIDE_TEST_BIN_DIR ${PROJECT_SOURCE_DIR}/test_bin)
 set(TIDE_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
 
+find_package(SQLite3 REQUIRED)
+
 set(LIB_SRC
     tide/scheduler.cc
     tide/worker.cc
@@ -49,6 +51,7 @@ set(LIB_SRC
     tide/util/json_util.cc
     tide/email/email.cc
     tide/email/smtp.cc
+    tide/database/sqlite.cc
     tide/thread.cc
     tide/socket.cc
     tide/fiber.cc
@@ -66,7 +69,9 @@ set(LIB_SRC
     tide/library.cc
     )
 
+
 add_library(tide SHARED ${LIB_SRC})
+target_link_libraries(tide PUBLIC ${SQLite3_LIBRARIES})
 tide_link_libraries(tide)
 # 动态库输出到 lib/
 set_target_properties(tide PROPERTIES

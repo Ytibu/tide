@@ -84,6 +84,17 @@ namespace tide
         return buf;
     }
 
+    time_t Str2Time(const char* str, const char* format)
+    {
+        struct tm tm;
+        memset(&tm, 0, sizeof(tm));
+        if (strptime(str, format, &tm) == nullptr)
+        {
+            return 0;
+        }
+        return mktime(&tm);
+    }
+
     void FSUtil::ListAllFile(std::vector<std::string> &files, const std::string &path, const std::string &subfix)
     {
         // 判断路径是否可读

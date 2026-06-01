@@ -26,6 +26,7 @@ namespace tide
     uint64_t GetCurrentUS();
 
     std::string Time2Str(time_t ts = time(0), const std::string &format = "%Y-%m-%d %H:%M:%S");
+    time_t Str2Time(const char *str, const char *format = "%Y-%m-%d %H:%M:%S");
 
     class FSUtil
     {
@@ -68,7 +69,43 @@ namespace tide
         static bool OpenForWrite(std::ofstream &ofs, const std::string &filename, std::ios_base::openmode mode);
     };
 
-    template <class Map, class K, class V>
+    // template <class Map, class K, class V>
+    // V GetParamValue(const Map &m, const K &k, const V &def = V())
+    // {
+    //     auto it = m.find(k);
+    //     if (it == m.end())
+    //     {
+    //         return def;
+    //     }
+    //     try
+    //     {
+    //         return boost::lexical_cast<V>(it->second);
+    //     }
+    //     catch (...)
+    //     {
+    //     }
+    //     return def;
+    // }
+
+    // template <class Map, class K, class V>
+    // bool CheckGetParamValue(const Map &m, const K &k, V &v)
+    // {
+    //     auto it = m.find(k);
+    //     if (it == m.end())
+    //     {
+    //         return false;
+    //     }
+    //     try
+    //     {
+    //         v = boost::lexical_cast<V>(it->second);
+    //         return true;
+    //     }
+    //     catch (...)
+    //     {
+    //     }
+    //     return false;
+    // }
+    template <class V, class Map, class K>
     V GetParamValue(const Map &m, const K &k, const V &def = V())
     {
         auto it = m.find(k);
@@ -86,7 +123,7 @@ namespace tide
         return def;
     }
 
-    template <class Map, class K, class V>
+    template <class V, class Map, class K>
     bool CheckGetParamValue(const Map &m, const K &k, V &v)
     {
         auto it = m.find(k);

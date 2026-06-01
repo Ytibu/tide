@@ -19,12 +19,12 @@ endmacro()
 
 macro(tide_link_libraries target)
     # Link third-party libraries to a target
-    target_link_libraries(${target} ${TIDE_LIBRARIES})
+    target_link_libraries(${target} PUBLIC ${TIDE_LIBRARIES})
 endmacro()
 
 macro(tide_link_executable target)
     # Link both tide library and all third-party libraries to a test executable
-    target_link_libraries(${target} tide ${TIDE_LIBRARIES})
+    target_link_libraries(${target} PRIVATE tide ${TIDE_LIBRARIES})
 endmacro()
 
 function(tide_setup_compile_flags)
