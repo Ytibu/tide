@@ -51,7 +51,9 @@ set(LIB_SRC
     tide/util/json_util.cc
     tide/email/email.cc
     tide/email/smtp.cc
+    tide/database/fox_thread.cc
     tide/database/sqlite.cc
+    tide/database/redis.cc
     tide/thread.cc
     tide/socket.cc
     tide/fiber.cc
@@ -67,11 +69,20 @@ set(LIB_SRC
     tide/module.cc
     tide/bytearray.cc
     tide/library.cc
+
     )
 
 
 add_library(tide SHARED ${LIB_SRC})
 target_link_libraries(tide PUBLIC ${SQLite3_LIBRARIES})
+target_link_libraries(tide PUBLIC pthread)
+target_link_libraries(tide PUBLIC yaml-cpp)
+target_link_libraries(tide PUBLIC protobuf)
+target_link_libraries(tide PUBLIC jsoncpp)
+target_link_libraries(tide PUBLIC hiredis)
+target_link_libraries(tide PUBLIC hiredis_vip)
+target_link_libraries(tide PUBLIC event)
+
 tide_link_libraries(tide)
 # 动态库输出到 lib/
 set_target_properties(tide PROPERTIES
