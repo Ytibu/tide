@@ -1,5 +1,7 @@
 # Shared CMake helper macros for Tide project.
 
+include_guard(GLOBAL)
+
 macro(tide_define_project_macros)
     # Rewrite __FILE__ absolute paths to project-relative paths at compile time.
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

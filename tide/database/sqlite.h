@@ -72,9 +72,9 @@ namespace tide
 
         /**
          * @brief 打开一个事务对象，默认不自动提交
-         * 
-         * @param auto_commit 
-         * @return ITransaction::ptr 
+         *
+         * @param auto_commit
+         * @return ITransaction::ptr
          */
         ITransaction::ptr openTransaction(bool auto_commit = false) override;
 
@@ -384,7 +384,7 @@ namespace tide
         XX(float, double);
         XX(double, double);
 #undef XX
-    }   // namespace
+    } // namespace
 
 }
 
