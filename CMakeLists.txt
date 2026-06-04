@@ -37,6 +37,7 @@ find_package(yaml-cpp REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(tinyxml2 REQUIRED)
 find_package(PkgConfig QUIET)
 
 if(PkgConfig_FOUND)
@@ -110,12 +111,21 @@ set(TIDE_DATABASE_SRC
     tide/database/redis.cc
 )
 
+set(TIDE_ORM_SRC
+    tide/orm/orm.cc
+    tide/orm/column.cc
+    tide/orm/table.cc
+    tide/orm/index.cc
+    tide/orm/util.cc
+)
+
 set(TIDE_ALL_SRC
     ${TIDE_CORE_SRC}
     ${TIDE_HTTP_SRC}
     ${TIDE_UTIL_SRC}
     ${TIDE_EMAIL_SRC}
     ${TIDE_DATABASE_SRC}
+    ${TIDE_ORM_SRC}
 )
 
 set(TIDE_THIRD_PARTY_LIBS
@@ -126,6 +136,7 @@ set(TIDE_THIRD_PARTY_LIBS
     jsoncpp_lib
     OpenSSL::SSL
     OpenSSL::Crypto
+    tinyxml2::tinyxml2
 )
 
 # ======================

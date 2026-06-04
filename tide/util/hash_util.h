@@ -65,9 +65,9 @@ namespace tide
      * @param find
      * @param replaceWith
      */
-    void replace(std::string &str, char find, char replaceWith);                             // 字符换字符
-    void replace(std::string &str, char find, const std::string &replaceWith);               // 字符换字符串
-    void replace(std::string &str, const std::string &find, const std::string &replaceWith); // 字符串换字符串
+    std::string replace(const std::string &str, char find, char replaceWith);                             // 字符换字符
+    std::string replace(const std::string &str, char find, const std::string &replaceWith);               // 字符换字符串
+    std::string replace(const std::string &str, const std::string &find, const std::string &replaceWith); // 字符串换字符串
 
     /**
      * @brief 将字符串按照指定的分隔符进行分割，返回一个包含分割结果的字符串向量
